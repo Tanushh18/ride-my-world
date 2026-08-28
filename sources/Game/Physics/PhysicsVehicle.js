@@ -63,9 +63,9 @@ export class PhysicsVehicle
             friction: 0.4,
             canSleep: false,
             colliders: [
-                { shape: 'cuboid', parameters: [ 1.3, 0.4, 0.85 ], mass: 2.5, position: { x: 0, y: -0.1, z: 0 }, centerOfMass: { x: 0, y: -0.5, z: 0 } },
-                { shape: 'cuboid', parameters: [ 0.5, 0.15, 0.65 ], mass: 0, position: { x: 0, y: 0.4, z: 0 } },
-                { shape: 'cuboid', parameters: [ 1.5, 0.5, 0.9 ], mass: 0, position: { x: 0.1, y: -0.2, z: 0 }, category: 'bumper' }
+                { shape: 'cuboid', parameters: [ 1.28, 0.34, 0.81 ], mass: 2.5, position: { x: 0, y: -0.16, z: 0 }, centerOfMass: { x: 0, y: -0.5, z: 0 } },
+                { shape: 'cuboid', parameters: [ 0.7, 0.16, 0.7 ], mass: 0, position: { x: -0.1, y: 0.3, z: 0 } },
+                { shape: 'cuboid', parameters: [ 1.45, 0.42, 0.8 ], mass: 0, position: { x: 0.1, y: -0.22, z: 0 }, category: 'bumper' }
             ]
         })
 
@@ -80,10 +80,10 @@ export class PhysicsVehicle
         this.wheels.items = []
 
         this.wheels.settings = {
-            offset: { x: 0.9, y: 0, z: 0.75 },
+            offset: { x: 0.88, y: 0, z: 0.82 },
             radius: 0.4,
             width: 0.3,
-            restLength: 0.88,
+            restLength: 0.62,
             suspensionStiffness: 25,
             directionCs: { x: 0, y: -1, z: 0 },
             axleCs: { x: 0, y: 0, z: 1 },

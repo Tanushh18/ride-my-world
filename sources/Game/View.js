@@ -20,14 +20,14 @@ export class View
         this.camera.position.set(-12, 8, 0)
 
         this.focusPoint = new THREE.Vector3()
-        this.focusHeight = 1.2
+        this.focusHeight = 1.05
         this.focusSmoothing = 0.0000001
         this.thetaSmoothing = 0.02
         this.radiusSmoothing = 0.05
 
-        this.spherical = { radius: 13, phi: Math.PI * 0.34, theta: Math.PI }
-        this.baseRadius = 13
-        this.speedRadius = 5
+        this.spherical = { radius: 9.5, phi: Math.PI * 0.37, theta: Math.PI }
+        this.baseRadius = 9.5
+        this.speedRadius = 4
 
         this.manual = { active: false, releaseAt: 0, holdDuration: 2.5 }
 

@@ -71,7 +71,12 @@ export class Physics
 
         for(const colliderDescription of description.colliders)
         {
-            let collider = RAPIER.ColliderDesc[colliderDescription.shape](...colliderDescription.parameters)
+            // 'hull' is spelled differently in Rapier, and can fail to build
+            const shape = colliderDescription.shape === 'hull' ? 'convexHull' : colliderDescription.shape
+            let collider = RAPIER.ColliderDesc[shape](...colliderDescription.parameters)
+
+            if(!collider)
+                throw new Error(`Physics > could not build a ${colliderDescription.shape} collider`)
 
             if(colliderDescription.position)
                 collider.setTranslation(

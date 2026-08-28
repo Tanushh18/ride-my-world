@@ -179,3 +179,34 @@ Added during Phase 1, where reality differed from the plan:
 - The smoke test measures progress in frames, not milliseconds. Headless
   software rendering runs at about 2fps, so a time-based test asserts only that
   nothing has happened yet.
+
+Added during Phase 2:
+
+- **Shadow colour is a multiplier, not a blend target.** Blending towards a
+  saturated purple lands on grey for every green surface, which produced exactly
+  the muddy look the stylised material exists to avoid. A pale lavender
+  (`#9a95d8`) used as a multiply keeps each surface's hue and simply darkens and
+  cools it.
+- **Bloom is opt-in** (`#bloom`). Measured at 8fps on this machine for an effect
+  that is barely visible against a flat, low-contrast palette. It should become
+  a quality-system decision rather than always-on.
+- **Grass wrapping uses a `fract`-based positive modulo**, not `mod()`. TSL's
+  `mod` maps to backend operators whose behaviour for negative operands differs
+  between WGSL and GLSL, and the wrap window straddles zero.
+- **Blade height has to stay well under the wheel radius.** At 0.62 against a
+  0.4 radius wheel the car looked like it was wading rather than driving. Now
+  0.33.
+- **Assertions must not sample only the final frame.** The car routinely ends a
+  run against a tree (hiding its top speed) or having turned a full circle
+  (hiding that it steered). The smoke test now samples every frame and asserts
+  on top speed, peak steering angle and accumulated heading change.
+- `receivedShadowNode` receives a value whose type varies, so it is read as
+  `vec3(shadow).r` to work whether it arrives as a scalar or a colour.
+
+### Known gaps after Phase 2
+
+- Frame rate is 50-56fps on this machine, not a locked 60. The cost is spread
+  across the shadow pass, 90,000 grass blades and ~420 objects; no single
+  dominant cost was found beyond bloom, which is now off. The quality system in
+  Phase 6 is where this gets addressed properly.
+- The world is scenery only. Portfolio areas, content and UI are Phase 3.

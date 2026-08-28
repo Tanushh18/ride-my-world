@@ -16,7 +16,11 @@
  */
 import { chromium } from 'playwright'
 
-const URL = process.env.SMOKE_URL ?? 'http://localhost:5173/#debug'
+// Headless means software rendering, which cannot afford the full grass field
+const URL = process.env.SMOKE_URL
+    ?? (process.env.HEADLESS === '0'
+        ? 'http://localhost:5173/#debug'
+        : 'http://localhost:5173/#debug&quality=low')
 const SHOT = process.env.SMOKE_SHOT ?? '/tmp/folio-smoke.png'
 const HEADLESS = process.env.HEADLESS !== '0'
 
@@ -36,7 +40,17 @@ const page = await browser.newPage({ viewport: { width: 1280, height: 800 } })
 const logs = []
 const errors = []
 
-page.on('console', (message) => { logs.push(`[${message.type()}] ${message.text()}`) })
+// Console errors matter as much as thrown ones: a shader that fails to
+// compile reports there and nowhere else.
+const consoleErrors = []
+
+page.on('console', (message) =>
+{
+    logs.push(`[${message.type()}] ${message.text()}`)
+
+    if(message.type() === 'error')
+        consoleErrors.push(message.text())
+})
 page.on('pageerror', (error) => { errors.push(String(error)) })
 
 /** Block until the page has rendered `count` more frames. */
@@ -95,8 +109,38 @@ await page.waitForFunction(
 
 const settled = await readState()
 
+if(process.env.SMOKE_SHOT_REST)
+    await page.screenshot({ path: process.env.SMOKE_SHOT_REST })
+
 // Drive: throttle for 90 frames, then add steering for 90 more
 const before = await readState()
+
+await page.evaluate(() =>
+{
+    // Sample every frame. End-of-run snapshots lie: the car often finishes
+    // against a tree (hiding its top speed) or having turned a full circle
+    // (hiding that it steered at all).
+    window.__probe = { topSpeed: 0, turned: 0, maxSteer: 0 }
+
+    let previousYaw = window.game.physicsVehicle.yRotation
+
+    window.game.ticker.events.on('tick', () =>
+    {
+        const vehicle = window.game.physicsVehicle
+        const probe = window.__probe
+
+        probe.topSpeed = Math.max(probe.topSpeed, vehicle.speed)
+        probe.maxSteer = Math.max(probe.maxSteer, Math.abs(vehicle.wheels.items[0].steering))
+
+        // Shortest signed step, accumulated as absolute heading change
+        let delta = (vehicle.yRotation - previousYaw) % (Math.PI * 2)
+        if(delta > Math.PI) delta -= Math.PI * 2
+        if(delta < -Math.PI) delta += Math.PI * 2
+
+        probe.turned += Math.abs(delta)
+        previousYaw = vehicle.yRotation
+    }, 500)
+})
 
 await page.keyboard.down('w')
 await waitFrames(90)
@@ -106,6 +150,8 @@ await page.keyboard.up('a')
 await page.keyboard.up('w')
 await waitFrames(10)
 
+const probe = await page.evaluate(() => window.__probe)
+
 const after = await readState()
 const fps = (after.frame - settled.frame) / Math.max(after.elapsed - settled.elapsed, 0.001)
 
@@ -113,17 +159,19 @@ await page.screenshot({ path: SHOT })
 await browser.close()
 
 const moved = Math.hypot(after.position.x - before.position.x, after.position.z - before.position.z)
-const restLength = 0.88
+const restLength = 0.62
 
 const checks = [
     [ 'no page errors',           errors.length === 0,                          errors.join(' | ') || 'clean' ],
+    [ 'no console errors',        consoleErrors.length === 0,                   consoleErrors.join(' | ').slice(0, 200) || 'clean' ],
     [ 'expected backend',         WEBGPU ? after.backend === 'WebGPU' : true,   after.backend ],
     [ 'renderer drew the scene',  after.drawCalls > 20,                         `${after.drawCalls} draw calls, ${after.triangles} tris` ],
     [ 'car settled on 4 wheels',  settled.wheelsInContact === 4,                `${settled.wheelsInContact}/4` ],
     [ 'suspension compressed',    settled.suspension.every(l => l > 0 && l < restLength), `lengths ${settled.suspension.join(', ')} (rest ${restLength})` ],
     [ 'car drove forward',        moved > 3,                                    `moved ${moved.toFixed(2)}m in 180 frames` ],
-    [ 'car reached real speed',   after.speed > 2,                              `${after.speed.toFixed(2)} m/s` ],
-    [ 'car steered',              Math.abs(after.yRotation) > 0.05,             `yaw ${after.yRotation.toFixed(3)} rad` ],
+    [ 'car reached real speed',   probe.topSpeed > 8,                           `top ${probe.topSpeed.toFixed(2)} m/s` ],
+    [ 'steering reached wheels',  probe.maxSteer > 0.2,                         `max ${probe.maxSteer.toFixed(3)} rad` ],
+    [ 'car changed heading',      probe.turned > 1,                             `turned ${probe.turned.toFixed(2)} rad total` ],
     [ 'wheels spun',              Math.abs(after.wheelRotation) > 1,            `${after.wheelRotation.toFixed(2)} rad` ],
     [ 'car did not fall through',  after.position.y > 0.5 && after.position.y < 30, `y = ${after.position.y.toFixed(2)}` ]
 ]

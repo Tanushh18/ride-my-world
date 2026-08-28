@@ -1,13 +1,16 @@
 import * as THREE from 'three/webgpu'
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import { Game } from '../Game.js'
 
 /**
- * The car's visual half, built entirely from primitives.
+ * The car's visual half, built entirely from rounded primitives.
  *
- * The body group is synced to the chassis rigid body; the wheels are its
- * children, so their suspension travel, steering and spin are plain local
- * transforms. Wheel geometry is baked pointing along Z (the axle) so spinning
- * is a single rotation.
+ * Rounded boxes rather than plain ones: the soft edge catches the light along
+ * its curve, which is what stops the car reading as a crate. Its dimensions
+ * mirror the chassis colliders, so what you see is what the physics simulates.
+ *
+ * The body group follows the chassis rigid body; the wheels are its children, so
+ * suspension travel, steering and spin are plain local transforms.
  */
 export class VisualVehicle
 {
@@ -26,25 +29,39 @@ export class VisualVehicle
 
     setBody()
     {
-        const paint = new THREE.MeshLambertNodeMaterial({ color: '#ff5a3c' })
-        const dark = new THREE.MeshLambertNodeMaterial({ color: '#2b2f44' })
-        const glass = new THREE.MeshLambertNodeMaterial({ color: '#8ad8ff' })
+        const materials = this.game.materials
 
-        // Half-extents mirror the chassis colliders so the visual matches the
-        // simulation instead of merely resembling it.
         const parts = [
-            { size: [ 2.6, 0.8, 1.7 ], position: [ 0, -0.1, 0 ], material: paint },
-            { size: [ 1.0, 0.3, 1.3 ], position: [ 0, 0.4, 0 ], material: glass },
-            { size: [ 0.5, 0.25, 1.75 ], position: [ 1.15, -0.05, 0 ], material: dark },
-            { size: [ 0.35, 0.5, 1.5 ], position: [ -1.3, 0.15, 0 ], material: dark }
+            // Main hull — matches the 1.28 x 0.34 x 0.75 chassis collider
+            { size: [ 2.56, 0.6, 1.62 ], radius: 0.14, position: [ 0, -0.2, 0 ], material: 'carPaint' },
+            // A thin glass band, not a full-height cabin
+            { size: [ 1.4, 0.3, 1.42 ], radius: 0.1, position: [ -0.1, 0.22, 0 ], material: 'carGlass' },
+            // Roof, slightly wider than the glass so it reads as an overhang
+            { size: [ 1.5, 0.13, 1.46 ], radius: 0.06, position: [ -0.12, 0.42, 0 ], material: 'carPaint' },
+            // Bumpers
+            { size: [ 0.3, 0.3, 1.54 ], radius: 0.09, position: [ 1.3, -0.24, 0 ], material: 'carDark' },
+            { size: [ 0.28, 0.3, 1.54 ], radius: 0.09, position: [ -1.32, -0.24, 0 ], material: 'carDark' },
+            // Spoiler on two legs
+            { size: [ 0.4, 0.09, 1.35 ], radius: 0.04, position: [ -1.26, 0.3, 0 ], material: 'carDark' },
+            { size: [ 0.1, 0.24, 0.1 ], radius: 0.03, position: [ -1.22, 0.16, 0.55 ], material: 'carDark' },
+            { size: [ 0.1, 0.24, 0.1 ], radius: 0.03, position: [ -1.22, 0.16, -0.55 ], material: 'carDark' },
+            // Headlights
+            { size: [ 0.1, 0.18, 0.26 ], radius: 0.05, position: [ 1.34, -0.06, 0.46 ], material: 'accent' },
+            { size: [ 0.1, 0.18, 0.26 ], radius: 0.05, position: [ 1.34, -0.06, -0.46 ], material: 'accent' },
+            // Tail lights
+            { size: [ 0.09, 0.14, 0.24 ], radius: 0.045, position: [ -1.4, -0.06, 0.48 ], material: 'accentWarm' },
+            { size: [ 0.09, 0.14, 0.24 ], radius: 0.045, position: [ -1.4, -0.06, -0.48 ], material: 'accentWarm' }
         ]
 
         for(const part of parts)
         {
-            const mesh = new THREE.Mesh(new THREE.BoxGeometry(...part.size), part.material)
+            const geometry = new RoundedBoxGeometry(...part.size, 3, part.radius)
+            const mesh = new THREE.Mesh(geometry, materials.get(part.material))
+
             mesh.position.set(...part.position)
             mesh.castShadow = true
             mesh.receiveShadow = true
+
             this.group.add(mesh)
         }
     }
@@ -53,14 +70,17 @@ export class VisualVehicle
     {
         const settings = this.game.physicsVehicle.wheels.settings
 
-        const tyreGeometry = new THREE.CylinderGeometry(settings.radius, settings.radius, settings.width, 18)
+        const tyreGeometry = new THREE.CylinderGeometry(settings.radius, settings.radius, settings.width, 16)
         tyreGeometry.rotateX(Math.PI * 0.5)
 
-        // A hub bar makes the spin readable; a plain cylinder looks static.
-        const hubGeometry = new THREE.BoxGeometry(settings.radius * 1.5, settings.radius * 0.28, settings.width * 1.05)
+        // Slightly proud of the tyre, so the spin is readable at speed
+        const rimGeometry = new THREE.CylinderGeometry(settings.radius * 0.52, settings.radius * 0.52, settings.width * 1.06, 6)
+        rimGeometry.rotateX(Math.PI * 0.5)
 
-        const tyreMaterial = new THREE.MeshLambertNodeMaterial({ color: '#22242f' })
-        const hubMaterial = new THREE.MeshLambertNodeMaterial({ color: '#f2f2f2' })
+        const spokeGeometry = new RoundedBoxGeometry(settings.radius * 1.5, settings.radius * 0.16, settings.width * 1.08, 2, 0.04)
+
+        const tyreMaterial = this.game.materials.get('tyre')
+        const rimMaterial = this.game.materials.get('rim')
 
         this.wheels = []
 
@@ -73,10 +93,12 @@ export class VisualVehicle
             const tyre = new THREE.Mesh(tyreGeometry, tyreMaterial)
             tyre.castShadow = true
 
-            const hub = new THREE.Mesh(hubGeometry, hubMaterial)
-            hub.castShadow = true
+            const rim = new THREE.Mesh(rimGeometry, rimMaterial)
+            rim.castShadow = true
 
-            spinner.add(tyre, hub)
+            const spoke = new THREE.Mesh(spokeGeometry, rimMaterial)
+
+            spinner.add(tyre, rim, spoke)
             holder.add(spinner)
             this.group.add(holder)
 

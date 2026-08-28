@@ -1,13 +1,16 @@
 import { Game } from '../Game.js'
-import { Floor } from './Floor.js'
+import { Grass } from './Grass.js'
+import { Ground } from './Ground.js'
 import { Playground } from './Playground.js'
+import { Scenery } from './Scenery.js'
+import { Sky } from './Sky.js'
 import { VisualVehicle } from './VisualVehicle.js'
 
 /**
  * Owns everything visible in the scene.
  *
- * Built in one step for Phase 1; later phases split construction so the intro
- * can render before the heavy systems exist.
+ * Order matters only in that the ground should exist before things are placed
+ * on it; the rest is independent.
  */
 export class World
 {
@@ -15,8 +18,11 @@ export class World
     {
         this.game = Game.getInstance()
 
-        this.floor = new Floor()
+        this.sky = new Sky()
+        this.ground = new Ground()
+        this.grass = new Grass()
         this.visualVehicle = new VisualVehicle()
+        this.scenery = new Scenery()
         this.playground = new Playground()
     }
 }
