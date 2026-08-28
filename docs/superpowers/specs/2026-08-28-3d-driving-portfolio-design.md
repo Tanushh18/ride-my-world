@@ -163,3 +163,19 @@ This is a real-time graphical system, so the strategy is layered:
 
 Multiplayer whispers, online leaderboard, WebGPU compute grass (Phase 2 uses
 vertex-shader grass), localisation, blog.
+
+## Implementation notes
+
+Added during Phase 1, where reality differed from the plan:
+
+- `vite-plugin-top-level-await` is incompatible with current `@swc/core`
+  ("missing field `type`" during `generateBundle`). Dropped in favour of
+  `build.target: 'esnext'`, which lets the browser handle Rapier's top-level
+  await natively. One less dependency.
+- Chrome on Linux does not enable WebGPU by default, so local runs take the
+  WebGL2 fallback unless started with `--enable-unsafe-webgpu
+  --enable-features=Vulkan`. Both backends were measured at ~60fps on this
+  machine, and the smoke test can target either.
+- The smoke test measures progress in frames, not milliseconds. Headless
+  software rendering runs at about 2fps, so a time-based test asserts only that
+  nothing has happened yet.
