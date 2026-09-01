@@ -22,6 +22,7 @@ const URL = process.env.SMOKE_URL
         ? 'http://localhost:5173/#debug'
         : 'http://localhost:5173/#debug&quality=low')
 const SHOT = process.env.SMOKE_SHOT ?? '/tmp/folio-smoke.png'
+const PLAZA_SHOT = process.env.SMOKE_SHOT_PLAZA ?? '/tmp/folio-plaza.png'
 const HEADLESS = process.env.HEADLESS !== '0'
 
 const WEBGPU = process.env.WEBGPU === '1'
@@ -155,6 +156,42 @@ const probe = await page.evaluate(() => window.__probe)
 const after = await readState()
 const fps = (after.frame - settled.frame) / Math.max(after.elapsed - settled.elapsed, 0.001)
 
+// The card. Teleport rather than drive the 87 units to the plaza: the run above
+// already proved the car drives, and this scenario is about the zone and the DOM.
+// Frame ordering does the rest — Zones resolves at priority 8, the card reacts
+// at 14, so a couple of frames is enough.
+await page.evaluate(() =>
+{
+    const zone = window.game.zones.items[0]
+    window.game.physicsVehicle.moveTo({ x: zone.position.x, y: 2, z: zone.position.z })
+})
+
+await waitFrames(3)
+
+const inZone = await page.evaluate(() =>
+{
+    const card = document.querySelector('.js-card')
+
+    return {
+        zoneCount: window.game.zones.items.length,
+        activeId: window.game.zones.active ? window.game.zones.active.id : null,
+        isVisible: card.classList.contains('is-visible'),
+        title: card.querySelector('.js-card-title').textContent,
+        linkCount: card.querySelectorAll('.js-card-links a').length
+    }
+})
+
+await page.screenshot({ path: PLAZA_SHOT })
+
+await page.evaluate(() => { window.game.physicsVehicle.moveTo({ x: 0, y: 2, z: 0 }) })
+
+await waitFrames(3)
+
+const outOfZone = await page.evaluate(() => ({
+    activeId: window.game.zones.active,
+    isVisible: document.querySelector('.js-card').classList.contains('is-visible')
+}))
+
 await page.screenshot({ path: SHOT })
 await browser.close()
 
@@ -173,7 +210,11 @@ const checks = [
     [ 'steering reached wheels',  probe.maxSteer > 0.2,                         `max ${probe.maxSteer.toFixed(3)} rad` ],
     [ 'car changed heading',      probe.turned > 1,                             `turned ${probe.turned.toFixed(2)} rad total` ],
     [ 'wheels spun',              Math.abs(after.wheelRotation) > 1,            `${after.wheelRotation.toFixed(2)} rad` ],
-    [ 'car did not fall through',  after.position.y > 0.5 && after.position.y < 30, `y = ${after.position.y.toFixed(2)}` ]
+    [ 'car did not fall through',  after.position.y > 0.5 && after.position.y < 30, `y = ${after.position.y.toFixed(2)}` ],
+    [ 'a zone per project',       inZone.zoneCount === 4,                       `${inZone.zoneCount} zones` ],
+    [ 'card shows inside a zone', inZone.isVisible && inZone.activeId !== null, `${inZone.activeId} — "${inZone.title}"` ],
+    [ 'card was filled in',       inZone.title.length > 0 && inZone.linkCount > 0, `${inZone.linkCount} link(s)` ],
+    [ 'card hides outside zones', !outOfZone.isVisible && outOfZone.activeId === null, outOfZone.activeId ? `still ${outOfZone.activeId}` : 'none active' ]
 ]
 
 console.log(`backend: ${after.backend}   fps: ${fps.toFixed(1)}   objects: ${after.objectCount}`)
@@ -188,7 +229,7 @@ for(const [ name, passed, detail ] of checks)
         failures++
 }
 
-console.log(`\nscreenshot: ${SHOT}`)
+console.log(`\nscreenshots: ${SHOT}, ${PLAZA_SHOT}`)
 
 if(failures > 0)
 {

@@ -55,6 +55,38 @@ grey, which is the muddy look the material exists to avoid.
 Every colour in the world comes from `data/palette.js`. Nothing else hardcodes
 one.
 
+## Areas
+
+A portfolio area is a ring of landmarks with one side left open, so the visitor
+drives in through the gap instead of around the outside. `Projects` is the first
+one: `data/world.js` says where the plaza is, `data/projects.js` says what is in
+it, and `arrangeOnArc` derives every building's position and facing from its
+index. **Adding a project is one object in `data/projects.js`** — the ring
+re-spaces itself and a zone is registered for the new entry.
+
+The buildings themselves are parametric. `Builders/building.js` takes `floors`,
+`width`, `depth` and a roof style and returns one merged geometry per material,
+so the whole plaza costs three draw calls. Nothing about a project's shape is
+authored by hand.
+
+`Zones.js` decides which card is on screen. Two rules, both there because of how
+the card behaves rather than how the geometry does:
+
+- **Nearest wins**, so "one card at a time" is true by construction rather than
+  bookkeeping the card has to do.
+- **Hysteresis** — a zone is entered at its radius but only left past
+  `radius x 1.25`. Driving along a boundary otherwise flips the card on and off
+  every few frames.
+
+The card is DOM, not a texture. Body text baked into a canvas is unreadable at
+driving distance and impossible to tap on a phone, and a link has to be a real
+link. The world stays 3D; only the words are HTML.
+
+Discovery needs no signposting: the plaza sits 87 units from spawn and its
+buildings are 10 to 23 units tall, so with fog at `near 55 / far 190` they read
+as a silhouette on the horizon from the spawn point. Moving the plaza means
+re-checking that against `Game/Fog.js`.
+
 ## Testing
 
 ```bash
@@ -67,7 +99,9 @@ npm run smoke:headless  # software rendering; forces #quality=low and is still s
 The smoke test boots the app in real Chrome, waits for the car to settle on its
 suspension, drives it, and asserts on measured state: console cleanliness, draw
 calls, wheel contact, suspension compression, distance travelled, top speed,
-peak steering angle, accumulated heading change and wheel spin.
+peak steering angle, accumulated heading change and wheel spin. It then puts the
+car in a project's zone and asserts the card appears, is filled in, and clears
+again on leaving.
 
 Two things it does deliberately:
 
@@ -111,6 +145,9 @@ sources/
   style/                plain CSS
   data/
     palette.js          every colour in the world
+    world.js            where the areas sit and how big they are
+    projects.js         the projects, content and building shape
+    validateProjects.js fails loudly on malformed project data
   Game/
     Game.js             singleton owning every subsystem
     Ticker.js           the single render loop, priority-ordered tick events
@@ -118,11 +155,14 @@ sources/
     Lighting.js         sun uniforms, plus a real light for the shadow map
     Fog.js              distance fog, applied by the materials
     Materials.js        shared material registry
+    Zones.js            proximity registry; emits enter and leave
     Materials/
       MeshStylizedMaterial.js   the look, in one file
-    Builders/           parametric geometry (vegetation, wedge)
+    Builders/           parametric geometry (vegetation, wedge, building, sign)
     Physics/            Rapier world and the raycast vehicle
     World/              everything visible: sky, ground, grass, scenery, car
+    World/Areas/        one class per portfolio area
+    Interface/          the DOM that reacts to the world
     Inputs/             devices mapped to named actions
     utilities/
 docs/superpowers/specs/   design documents

@@ -11,9 +11,14 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
  */
 const faceted = (geometry) =>
 {
-    const flat = geometry.toNonIndexed()
+    // Merged geometry can already be non-indexed, and toNonIndexed() then clones
+    // the buffers and logs a warning for nothing
+    const flat = geometry.index ? geometry.toNonIndexed() : geometry
     flat.computeVertexNormals()
-    geometry.dispose()
+
+    if(flat !== geometry)
+        geometry.dispose()
+
     return flat
 }
 

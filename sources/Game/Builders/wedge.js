@@ -24,9 +24,13 @@ export const buildWedge = (length, height, width) =>
     const geometry = new THREE.ExtrudeGeometry(shape, { depth: width, bevelEnabled: false })
     geometry.translate(0, 0, -halfWidth)
 
-    const flat = geometry.toNonIndexed()
+    // ExtrudeGeometry is already non-indexed; calling toNonIndexed() on it
+    // clones the buffers and logs a warning for nothing
+    const flat = geometry.index ? geometry.toNonIndexed() : geometry
     flat.computeVertexNormals()
-    geometry.dispose()
+
+    if(flat !== geometry)
+        geometry.dispose()
 
     // Six corners of the prism, in the order Rapier's convex hull wants them:
     // a flat list of x, y, z triples.

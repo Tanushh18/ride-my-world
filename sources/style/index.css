@@ -124,10 +124,122 @@ body
     font-weight: 700;
 }
 
+/* The card never takes the pointer — dragging the camera across it must still
+   work — so only its links opt back in. */
+.card
+{
+    position: fixed;
+    top: 50%;
+    right: 1.5rem;
+    width: min(22rem, calc(100vw - 3rem));
+    padding: 1.25rem 1.4rem;
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.86);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 1rem 2.5rem rgba(29, 34, 51, 0.18);
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(1.5rem, -50%);
+    transition: opacity 0.28s ease, transform 0.28s ease;
+}
+
+.card.is-visible
+{
+    opacity: 1;
+    transform: translate(0, -50%);
+}
+
+.card-head
+{
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.6;
+}
+
+.card-title
+{
+    margin: 0.35rem 0 0.5rem;
+    font-size: 1.35rem;
+    line-height: 1.15;
+}
+
+.card-description
+{
+    font-size: 0.85rem;
+    line-height: 1.5;
+    opacity: 0.8;
+}
+
+.card-tags
+{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin: 0.85rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.card-tags li
+{
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(29, 34, 51, 0.08);
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.card-links
+{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.card-links a
+{
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.5rem;
+    background: #1d2233;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-decoration: none;
+    pointer-events: auto;
+}
+
+.card-links a:hover
+{
+    background: #343b58;
+}
+
 @media (max-width: 40rem)
 {
     .hint
     {
         display: none;
+    }
+
+    /* A side panel would cover the car on a narrow screen; a bottom sheet
+       leaves the road visible. The hint bar is already hidden at this width. */
+    .card
+    {
+        top: auto;
+        right: 0.75rem;
+        bottom: 0.75rem;
+        left: 0.75rem;
+        width: auto;
+        transform: translate(0, 1.5rem);
+    }
+
+    .card.is-visible
+    {
+        transform: translate(0, 0);
     }
 }

@@ -2,6 +2,7 @@ import * as THREE from 'three/webgpu'
 import { Game } from '../Game.js'
 import { buildBush, buildRock, buildTree } from '../Builders/vegetation.js'
 import { seededRandom } from '../utilities/maths.js'
+import world from '../../data/world.js'
 
 /**
  * Fills the world with trees, rocks and bushes.
@@ -29,7 +30,14 @@ export class Scenery
             { x: -18, z: 12, radius: 12 },
             { x: 6, z: -22, radius: 12 },
             { x: 26, z: 6, radius: 8 },
-            { x: -14, z: -14, radius: 8 }
+            { x: -14, z: -14, radius: 8 },
+
+            // The projects plaza, so trees do not grow through the buildings
+            {
+                x: world.projectsArea.center.x,
+                z: world.projectsArea.center.z,
+                radius: world.projectsArea.clearingRadius
+            }
         ]
 
         this.extent = 150

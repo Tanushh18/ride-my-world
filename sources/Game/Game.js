@@ -10,11 +10,13 @@ import { Physics } from './Physics/Physics.js'
 import { PhysicsVehicle } from './Physics/PhysicsVehicle.js'
 import { Objects } from './Objects.js'
 import { Player } from './Player.js'
+import { Zones } from './Zones.js'
 import { View } from './View.js'
 import { Fog } from './Fog.js'
 import { Lighting } from './Lighting.js'
 import { Materials } from './Materials.js'
 import { World } from './World/World.js'
+import { ProjectCard } from './Interface/ProjectCard.js'
 import palette from '../data/palette.js'
 
 /**
@@ -76,6 +78,7 @@ export class Game
         this.objects = new Objects()
         this.physicsVehicle = new PhysicsVehicle()
         this.player = new Player()
+        this.zones = new Zones()
 
         // Presentation
         this.view = new View()
@@ -83,6 +86,9 @@ export class Game
         this.lighting = new Lighting()
         this.materials = new Materials()
         this.world = new World()
+
+        // After the world, because the zones it reacts to are registered there
+        this.projectCard = new ProjectCard()
 
         this.rendering.setPostProcessing()
 
