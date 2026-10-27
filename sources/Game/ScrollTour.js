@@ -261,10 +261,23 @@ export class ScrollTour
         const cityReveal = smoothstep(0.68, 0.82, this.progress)
         const finale = smoothstep(0.92, 0.99, this.progress)
 
-        const baseFollowDistance = mix(7.8, 4.35, establishing) + waterfall * 1.6 + cityReveal * 0.75 + finale * 4.8
-        const baseCameraHeight = mix(4.85, 2.45, establishing) + waterfall * 1.45 + cityReveal * 1.2 + finale * 3.15
+        // Pull back for a few cinematic establishing beats so the jungle,
+        // waterfall/bridge, full city blocks and terminal read as places — not
+        // merely as scenery beside a first-person road.
+        const jungleWide = smoothstep(0.335, 0.37, this.progress) * (1 - smoothstep(0.445, 0.49, this.progress))
+        const riverWide = smoothstep(0.545, 0.575, this.progress) * (1 - smoothstep(0.635, 0.675, this.progress))
+        const cityWide = smoothstep(0.735, 0.765, this.progress) * (1 - smoothstep(0.805, 0.855, this.progress))
+        const terminalWide = smoothstep(0.955, 0.97, this.progress) * (1 - smoothstep(0.985, 0.999, this.progress))
+        const scenicReveal = Math.max(jungleWide, riverWide, cityWide, terminalWide)
+
+        const baseFollowDistance = mix(7.8, 4.35, establishing)
+            + waterfall * 1.6 + cityReveal * 0.75 + finale * 4.8 + scenicReveal * 2.35
+        const baseCameraHeight = mix(4.85, 2.45, establishing)
+            + waterfall * 1.45 + cityReveal * 1.2 + finale * 3.15 + scenicReveal * 1.25
         const baseSideOffset = waterfall * 3.0 + cityReveal * 1.1 - finale * 2.0
-        const lookAhead = mix(5.8, 4.4, establishing) + waterfall * 1.6 + finale * 4.4
+            + scenicReveal * (this.progress > 0.52 ? -1.7 : 1.7)
+        const lookAhead = mix(5.8, 4.4, establishing)
+            + waterfall * 1.6 + finale * 4.4 + scenicReveal * 3.0
 
         let focusWeight = 0
         let focusStop = null
@@ -285,14 +298,17 @@ export class ScrollTour
 
         // Hold the wider scene for context, then settle on the nearby sign at
         // near eye level. Both the pan and the zoom follow the scroll easing.
+        const focusBlend = focusWeight * 0.94
         const followDistance = mix(baseFollowDistance, baseFollowDistance + 0.9, focusWeight)
-        const cameraHeight = mix(baseCameraHeight, 3.05, focusWeight)
+        const cameraHeight = mix(baseCameraHeight, 3.05 + scenicReveal * 0.3, focusWeight)
         const sideOffset = baseSideOffset * (1 - focusWeight * 0.72)
 
         this.roadCurve.getPointAt(Math.min(1, this.progress + lookAhead / Math.max(this.roadLength, 1)), this.cameraTarget)
-        this.cameraTarget.y = this.routePoint.y + mix(1.25, 1.65, finale)
+        this.cameraTarget.y = this.routePoint.y + mix(1.25, 1.65, finale) + scenicReveal * 0.9 * (1 - focusWeight)
+        if(scenicReveal > 0)
+            this.cameraTarget.addScaledVector(this.side, (this.progress > 0.52 ? -2.4 : 2.4) * scenicReveal * (1 - focusWeight))
         if(focusStop)
-            this.cameraTarget.lerp(focusStop.target, focusWeight * 0.94)
+            this.cameraTarget.lerp(focusStop.target, focusBlend)
 
         this.cameraPosition.copy(this.routePoint)
             .addScaledVector(this.tangent, -followDistance)
@@ -306,7 +322,7 @@ export class ScrollTour
         this.lookTarget.lerp(this.cameraTarget, immediateUpdate ? 1 : 1 - Math.exp(-delta * 6.1))
         camera.lookAt(this.lookTarget)
 
-        const nextFov = mix(mix(53, 49, finale) + waterfall * 3.5 + cityReveal * 1.2, 47.5, focusWeight)
+        const nextFov = mix(mix(53, 49, finale) + waterfall * 3.5 + cityReveal * 1.2 + scenicReveal * 3.4, 47.5, focusWeight)
         if(Math.abs(nextFov - this.lastFov) > 0.25)
         {
             camera.fov = nextFov
