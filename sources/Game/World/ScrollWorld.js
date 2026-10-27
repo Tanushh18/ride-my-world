@@ -28,6 +28,8 @@ export class ScrollWorld
         this.moteBaseY = new Float32Array(0)
         this.motePhase = new Float32Array(0)
         this.storyBoards = []
+        this.storyBoardData = []
+        this.riftGates = []
         this.facadeLabels = []
         this.aircraft = null
         this.airportPamphlet = null
@@ -56,6 +58,7 @@ export class ScrollWorld
         this.addTramTracks()
         this.addCrosswalks()
         this.addStreetLife()
+        this.addRiftGates()
         this.addLearningHub()
         this.addAirport()
         this.addSunDisk()
@@ -1133,6 +1136,136 @@ export class ScrollWorld
         }
     }
 
+    addRiftGates()
+    {
+        // Scroll-world energy gates: emissive rings, a holographic curtain and
+        // orbiting motes. Geometry is low-poly and animated in the existing loop.
+        const portalTexture = (() =>
+        {
+            if(typeof document === 'undefined')
+                return null
+            const canvas = document.createElement('canvas')
+            canvas.width = 256
+            canvas.height = 512
+            const ctx = canvas.getContext('2d')
+            if(!ctx)
+                return null
+            const gradient = ctx.createLinearGradient(0, 0, 0, 512)
+            gradient.addColorStop(0, 'rgba(100,255,227,0.01)')
+            gradient.addColorStop(0.22, 'rgba(100,255,227,0.17)')
+            gradient.addColorStop(0.5, 'rgba(182,130,255,0.38)')
+            gradient.addColorStop(0.78, 'rgba(100,255,227,0.17)')
+            gradient.addColorStop(1, 'rgba(100,255,227,0.01)')
+            ctx.fillStyle = gradient
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+            for(let y = 18; y < 512; y += 26)
+            {
+                ctx.fillStyle = 'rgba(225,255,245,0.1)'
+                ctx.fillRect(0, y, 256, 2)
+            }
+            const texture = new THREE.CanvasTexture(canvas)
+            texture.colorSpace = THREE.SRGBColorSpace
+            return texture
+        })()
+
+        const ringGeometry = new THREE.TorusGeometry(2.12, 0.065, 8, 64)
+        const innerGeometry = new THREE.TorusGeometry(1.74, 0.032, 6, 56)
+        const arcGeometry = new THREE.TorusGeometry(2.5, 0.027, 5, 64, Math.PI * 1.34)
+        const moteGeometry = new THREE.SphereGeometry(0.075, 8, 6)
+        const floorRingGeometry = new THREE.TorusGeometry(1.68, 0.035, 5, 48)
+        const curtainGeometry = new THREE.PlaneGeometry(2.9, 3.8)
+        const configurations = [
+            { t: 0.595, side: 1, color: '#82f7dc', second: '#c7a1ff' },
+            { t: 0.775, side: 1, color: '#ffc889', second: '#83f3dc' },
+            { t: 0.99, side: -1, color: '#9fc6ff', second: '#f1a5db' }
+        ]
+
+        configurations.forEach((config, index) =>
+        {
+            const frame = this.routeFrame(config.t)
+            const gate = new THREE.Group()
+            gate.name = 'ScrollWorldEnergyGate_' + (index + 1)
+            gate.position.copy(frame.position).addScaledVector(frame.side, config.side * 10.7)
+            gate.position.y = 3.12
+            gate.rotation.y = frame.yaw
+
+            const curtainMaterial = new THREE.MeshBasicMaterial({
+                map: portalTexture ?? null,
+                color: config.color,
+                transparent: true,
+                opacity: portalTexture ? 0.43 : 0.13,
+                side: THREE.DoubleSide,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending,
+                toneMapped: false
+            })
+            const curtain = new THREE.Mesh(curtainGeometry, curtainMaterial)
+            curtain.position.z = -0.045
+            curtain.renderOrder = 3
+            gate.add(curtain)
+
+            const outerMaterial = new THREE.MeshBasicMaterial({
+                color: config.color, transparent: true, opacity: 0.64,
+                blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false
+            })
+            const outer = new THREE.Mesh(ringGeometry, outerMaterial)
+            outer.renderOrder = 4
+            gate.add(outer)
+
+            const innerMaterial = new THREE.MeshBasicMaterial({
+                color: config.second, transparent: true, opacity: 0.74,
+                blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false
+            })
+            const inner = new THREE.Mesh(innerGeometry, innerMaterial)
+            inner.position.z = 0.035
+            inner.renderOrder = 4
+            gate.add(inner)
+
+            const arcMaterial = new THREE.MeshBasicMaterial({
+                color: '#fff4d7', transparent: true, opacity: 0.8,
+                blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false
+            })
+            const arc = new THREE.Mesh(arcGeometry, arcMaterial)
+            arc.rotation.z = Math.PI * 0.2
+            arc.position.z = 0.07
+            arc.renderOrder = 5
+            gate.add(arc)
+
+            const floorMaterial = new THREE.MeshBasicMaterial({
+                color: config.color, transparent: true, opacity: 0.48,
+                blending: THREE.AdditiveBlending, depthWrite: false,
+                side: THREE.DoubleSide, toneMapped: false
+            })
+            const floorRing = new THREE.Mesh(floorRingGeometry, floorMaterial)
+            floorRing.rotation.x = Math.PI / 2
+            floorRing.position.set(0, -2.77, 0)
+            gate.add(floorRing)
+
+            const orbit = new THREE.Group()
+            orbit.position.z = 0.1
+            for(let mote = 0; mote < 8; mote++)
+            {
+                const sparkMaterial = new THREE.MeshBasicMaterial({
+                    color: mote % 2 ? config.second : '#fff8e8',
+                    transparent: true, opacity: 0.75,
+                    blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false
+                })
+                const spark = new THREE.Mesh(moteGeometry, sparkMaterial)
+                const angle = mote / 8 * Math.PI * 2
+                spark.position.set(Math.cos(angle) * 2.26, Math.sin(angle) * 2.26, 0)
+                spark.scale.setScalar(mote % 3 === 0 ? 1.4 : 1)
+                orbit.add(spark)
+            }
+            gate.add(orbit)
+
+            this.group.add(gate)
+            this.riftGates.push({
+                group: gate, outer, inner, arc, floorRing, curtainMaterial,
+                orbit, pulseOffset: index * 1.7
+            })
+        })
+    }
+
     addLearningHub()
     {
         // A campus/library-like landmark near the education chapter, not a
@@ -1617,6 +1750,22 @@ export class ScrollWorld
                 positions.array[index * 3 + 1] = this.moteBaseY[index] + Math.sin(time * 0.8 + this.motePhase[index]) * 0.24
             positions.needsUpdate = true
         }
+
+        for(const gate of this.riftGates)
+        {
+            const pulse = 0.5 + 0.5 * Math.sin(time * 1.8 + gate.pulseOffset)
+            gate.outer.rotation.z = time * 0.42 + gate.pulseOffset
+            gate.inner.rotation.z = -time * 0.68 - gate.pulseOffset
+            gate.arc.rotation.z = time * 0.88 + gate.pulseOffset
+            gate.orbit.rotation.z = -time * 0.36
+            gate.outer.material.opacity = 0.46 + pulse * 0.36
+            gate.inner.material.opacity = 0.52 + (1 - pulse) * 0.36
+            gate.arc.material.opacity = 0.48 + pulse * 0.48
+            gate.floorRing.material.opacity = 0.28 + pulse * 0.35
+            gate.curtainMaterial.opacity = 0.2 + pulse * 0.32
+            gate.group.scale.setScalar(0.985 + pulse * 0.025)
+            gate.group.position.y = 3.12 + Math.sin(time * 1.1 + gate.pulseOffset) * 0.06
+        }
     }
 
     createStoryTexture(item, index, count)
@@ -1671,13 +1820,14 @@ export class ScrollWorld
         ctx.fillRect(58, 258, 86, 8)
 
         ctx.fillStyle = '#3e5555'
-        const bodyLines = item.lines.slice(0, 3)
-        ctx.font = bodyLines.length > 2 ? '500 30px Arial, sans-serif' : '500 34px Arial, sans-serif'
-        let bodyY = bodyLines.length > 2 ? 310 : 340
+        const bodyLines = item.lines.slice(0, 4)
+        ctx.font = bodyLines.length > 3 ? '500 27px Arial, sans-serif' : bodyLines.length > 2 ? '500 30px Arial, sans-serif' : '500 34px Arial, sans-serif'
+        let bodyY = bodyLines.length > 2 ? 300 : 340
+        const lineStep = bodyLines.length > 3 ? 51 : 58
         for(const line of bodyLines)
         {
             ctx.fillText(line, 58, bodyY, 1260)
-            bodyY += 58
+            bodyY += lineStep
         }
 
         ctx.fillStyle = '#42676a'
@@ -1703,63 +1853,63 @@ export class ScrollWorld
             {
                 t: 0.025, side: 1, kicker: '01 / THE BEGINNING',
                 title: portfolio.name.toUpperCase(),
-                lines: [portfolio.roleLine.replaceAll(' · ', '  /  '), portfolio.location + '  ·  Scroll to ride through my work'],
+                lines: [portfolio.roleLine.replaceAll(' · ', '  /  '), 'AI / ML  ·  DATA ANALYTICS  ·  BACKEND SYSTEMS', portfolio.location + '  ·  Scroll to ride through my work'],
                 footer: 'BUILD  /  ANALYSE  /  SHIP', accent: '#cc805e'
             },
             {
                 t: 0.13, side: -1, kicker: '02 / THE PERSON BEHIND THE BUILD',
                 title: 'AI. DATA. SYSTEMS.',
-                lines: ['Machine learning, data analytics and backend engineering.', 'Python, SQL, APIs and production-minded systems.', portfolio.about.note],
+                lines: ['Machine learning, data analytics and backend engineering.', 'Python · SQL · ML pipelines · REST APIs', 'Azure AI and cloud fundamentals certifications', 'Building useful software from real data'],
                 footer: 'CURIOSITY → USEFUL SOFTWARE', accent: '#3a9a8a'
             },
             {
                 t: 0.275, side: 1, kicker: '03 / TOOLS OF THE TRADE',
                 title: 'THE TOOLKIT',
-                lines: ['Python · SQL · C++ · JavaScript · React · Node.js', 'Machine learning · RAG · Analytics · Power BI', 'Azure · Docker · PostgreSQL · MongoDB'],
+                lines: ['Python · SQL · C++ · JavaScript · React · Node.js', 'Machine learning · RAG · Analytics · Power BI', 'Azure · Docker · PostgreSQL · MongoDB', 'EDA · feature engineering · REST API design'],
                 footer: 'PRACTICAL TOOLS, REAL SYSTEMS', accent: '#3a9a8a'
             },
             {
                 t: 0.48, side: -1, kicker: '04 / FROM LEARNING TO SHIPPING',
                 title: 'WORK IN MOTION',
-                lines: ['Backend Developer  ·  July 2026 — Present', 'Konverge Technologies  ·  IT/data analytics internship', 'Bluestock Fintech  ·  Backend development'],
+                lines: ['Backend Developer  ·  July 2026 — Present', 'Konverge Technologies  ·  IT/data analytics internship', 'Bluestock Fintech  ·  Backend development', 'APIs · databases · data preparation · model workflows'],
                 footer: 'APIS  /  DATA  /  PRACTICAL ML', accent: '#cc805e'
             },
             {
                 t: 0.70, side: 1, kicker: '05 / SELECTED BUILDS',
                 title: 'BUILT & SHIPPED',
-                lines: ['GGN Home · Real estate + AI · Live product', 'NIDS · Network security ML · RAG Research Agent', 'Stashr · WeCode · DealRadar · Apps and data tools'],
+                lines: ['GGN Home · Live real estate platform + AI recommendations', 'NIDS · Network intrusion detection with machine learning', 'RAG Research Agent · Document retrieval and grounded answers', 'Stashr · WeCode · DealRadar · Developer and data tools'],
                 footer: 'IDEAS THAT LEAVE THE NOTEBOOK', accent: '#3a9a8a'
             },
             {
                 t: 0.82, side: 1, kicker: '06 / THE LEARNING ROUTE',
                 title: 'THE FOUNDATION',
-                lines: ['B.Tech · Computer Science Engineering', 'AI & ML  ·  VIT Bhopal  ·  CGPA 8.59 / 10'],
+                lines: ['B.Tech · Computer Science Engineering', 'Artificial Intelligence & Machine Learning', 'VIT Bhopal University · CGPA 8.59 / 10', 'CBSE Class X and XII · 90% in both'],
                 footer: '90% IN CBSE CLASS X AND XII', accent: '#cc805e'
             },
             {
                 t: 0.89, side: -1, kicker: '07 / CERTIFIED LEARNING',
                 title: 'CLOUD. AI. PRACTICE.',
-                lines: ['Microsoft Azure AI-102 · AI-900 · AZ-900', 'Google IT Support Professional Certificate', 'Cloud fundamentals · AI services · App development'],
+                lines: ['Microsoft Azure AI-102 · AI-900 · AZ-900', 'Google IT Support Professional Certificate', 'Cloud fundamentals · AI services · App development', 'Professional credentials alongside product builds'],
                 footer: 'LEARN IT  /  BUILD WITH IT', accent: '#3a9a8a'
             },
             {
                 t: 0.955, side: 1, kicker: '08 / PROGRESS YOU CAN POINT TO',
                 title: 'CONSISTENCY COMPOUNDS.',
-                lines: ['500+ DSA problems solved · 4 industry certifications', '8.59 CGPA · 90% in CBSE Class X and XII', 'GGN Home live · Built and shipped a real product'],
+                lines: ['500+ DSA problems solved · 4 industry certifications', '8.59 CGPA · 90% in CBSE Class X and XII', 'GGN Home live · Built and shipped a real product', 'Three Microsoft Azure credentials across cloud and AI'],
                 footer: 'SMALL WINS, SHIPPED OFTEN', accent: '#cc805e'
             },
             {
                 t: 0.99, side: 1, kicker: '09 / THE NEXT DESTINATION',
                 title: 'LET’S BUILD WHAT’S NEXT.',
-                lines: [portfolio.contact.email, portfolio.contact.location + ' · ' + portfolio.contact.phone, portfolio.links.linkedin.replace('https://www.', '') + ' · ' + portfolio.links.github.replace('https://', '')],
+                lines: [portfolio.contact.email, portfolio.contact.phone, portfolio.contact.location + ' · India', 'LinkedIn: Tanush Chawla · GitHub: ' + portfolio.handle],
                 footer: 'SAY HELLO  /  BUILD SOMETHING USEFUL', accent: '#3a9a8a'
             }
         ]
 
         const compact = window.innerWidth < 760
-        const boardWidth = compact ? 5.75 : 7.35
-        const boardHeight = compact ? 3.15 : 4.05
-        this.storyBoardOffset = compact ? 6.0 : 7.2
+        const boardWidth = compact ? 6.25 : 8.2
+        const boardHeight = compact ? 3.58 : 4.7
+        this.storyBoardOffset = compact ? 6.35 : 8.25
         const backingMaterial = this.material('#24484b', { roughness: 0.62, metalness: 0.24 })
         const legMaterial = this.material('#4b5b59', { roughness: 0.55, metalness: 0.36 })
         const panelGeometry = new THREE.BoxGeometry(boardWidth, boardHeight, 0.2)
@@ -1772,7 +1922,7 @@ export class ScrollWorld
             const sign = new THREE.Group()
             sign.name = 'StoryBoard_' + String(index + 1).padStart(2, '0')
             sign.position.copy(frame.position).addScaledVector(frame.side, item.side * this.storyBoardOffset)
-            sign.position.y = compact ? 2.55 : 2.95
+            sign.position.y = compact ? 2.68 : 3.28
             sign.rotation.y = frame.yaw + (item.side > 0 ? Math.PI : 0)
 
             const backing = new THREE.Mesh(panelGeometry, backingMaterial)
@@ -1795,7 +1945,7 @@ export class ScrollWorld
             }
 
             const edge = new THREE.LineSegments(
-                new THREE.EdgesGeometry(new THREE.BoxGeometry(7.42, 4.12, 0.24)),
+                new THREE.EdgesGeometry(new THREE.BoxGeometry(boardWidth + 0.07, boardHeight + 0.07, 0.24)),
                 new THREE.LineBasicMaterial({
                     color: item.accent ?? '#d8b28b',
                     transparent: true,
@@ -1821,11 +1971,12 @@ export class ScrollWorld
                     new THREE.SphereGeometry(0.09, 8, 6),
                     new THREE.MeshBasicMaterial({ color: item.accent ?? '#f2b879' })
                 )
-                cap.position.set(x, 2.02, 0.02)
+                cap.position.set(x, boardHeight / 2 - 0.08, 0.02)
                 sign.add(cap)
             }
 
-            this.storyBoards.push({ group: sign, edge, texture, basePulse: index * 0.64 })
+            this.storyBoards.push({ group: sign, edge, texture, basePulse: index * 0.64, item })
+            this.storyBoardData.push(item)
             this.group.add(sign)
         })
     }
