@@ -42,6 +42,7 @@ try
             skills: document.querySelectorAll('.js-skill-grid .skill-tile').length,
             experience: document.querySelectorAll('.js-experience-list .experience-entry').length,
             projects: document.querySelectorAll('.js-project-grid .project-card').length,
+            projectZones: game.zones.items.length,
             certifications: document.querySelectorAll('.js-certification-list .certification-entry').length,
             achievements: document.querySelectorAll('.js-achievement-grid .achievement-card').length,
             name: document.querySelector('.brand-copy strong')?.textContent,
@@ -60,6 +61,8 @@ try
         throw new Error('Resume experience entries did not render; got ' + initial.experience)
     if(initial.projects !== 6)
         throw new Error('Expected 6 project showcases; got ' + initial.projects)
+    if(initial.projectZones !== 6)
+        throw new Error('Expected 6 3D project landmarks/zones; got ' + initial.projectZones)
     if(initial.certifications !== 4)
         throw new Error('Resume certifications did not render; got ' + initial.certifications)
     if(initial.achievements !== 5)
@@ -135,6 +138,7 @@ try
             skills: initial.skills,
             experience: initial.experience,
             projects: initial.projects,
+            projectZones: initial.projectZones,
             certifications: initial.certifications,
             achievements: initial.achievements
         },
