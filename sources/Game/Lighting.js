@@ -67,7 +67,10 @@ export class Lighting
 
     update()
     {
-        const focus = this.game.view.focusPoint
+        // Keep the shadow camera centred on the moving rider during the
+        // scroll-controlled ride; the parked physics body is not the focus.
+        const tour = this.game.view.scrollTour
+        const focus = tour?.active ? tour.ridePosition : this.game.view.focusPoint
 
         this.light.position.copy(focus).addScaledVector(this.direction, this.distance)
         this.light.target.position.copy(focus)
