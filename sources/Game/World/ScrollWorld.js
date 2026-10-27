@@ -55,6 +55,7 @@ export class ScrollWorld
         this.addCity()
         this.addTramTracks()
         this.addCrosswalks()
+        this.addStreetLife()
         this.addLearningHub()
         this.addAirport()
         this.addSunDisk()
@@ -684,7 +685,7 @@ export class ScrollWorld
     {
         const canvas = document.createElement('canvas')
         canvas.width = 1200
-        canvas.height = 320
+        canvas.height = 360
         const ctx = canvas.getContext('2d')
         if(!ctx)
             return null
@@ -697,28 +698,34 @@ export class ScrollWorld
         ctx.fillStyle = project.accent === 'mint' ? '#3a9a8a' : project.accent === 'amber' ? '#c8845f' : '#6f7aa8'
         ctx.fillRect(0, 0, 12, canvas.height)
         ctx.fillStyle = '#42676a'
-        ctx.font = '700 20px Arial, sans-serif'
-        ctx.fillText('T.  /  PROJECT ' + String(index + 1).padStart(2, '0'), 42, 52)
+        ctx.font = '700 19px Arial, sans-serif'
+        ctx.fillText('T.  /  PROJECT ' + String(index + 1).padStart(2, '0'), 42, 35)
 
-        let fontSize = 72
+        let fontSize = 69
         ctx.font = '700 ' + fontSize + 'px Arial, sans-serif'
-        while(ctx.measureText(project.title.toUpperCase()).width > 1110 && fontSize > 42)
+        while(ctx.measureText(project.title.toUpperCase()).width > 1110 && fontSize > 40)
         {
             fontSize -= 2
             ctx.font = '700 ' + fontSize + 'px Arial, sans-serif'
         }
         ctx.fillStyle = '#18383d'
-        ctx.fillText(project.title.toUpperCase(), 42, 145)
+        ctx.fillText(project.title.toUpperCase(), 42, 117)
 
         ctx.fillStyle = '#536b68'
-        ctx.font = '600 26px Arial, sans-serif'
-        ctx.fillText(project.subtitle.toUpperCase(), 42, 205)
+        ctx.font = '600 25px Arial, sans-serif'
+        ctx.fillText(project.subtitle.toUpperCase(), 42, 166, 1108)
+        ctx.fillStyle = '#4f6260'
+        ctx.font = '500 21px Arial, sans-serif'
+        ctx.fillText((project.details?.[0] ?? project.description).toUpperCase(), 42, 218, 1108)
+        ctx.font = '600 17px Arial, sans-serif'
+        ctx.fillStyle = '#6f7d72'
+        ctx.fillText(project.tags.slice(0, 4).join('  ·  ').toUpperCase(), 42, 260, 1108)
         ctx.fillStyle = '#b46d54'
-        ctx.fillRect(42, 247, 104, 7)
+        ctx.fillRect(42, 287, 104, 6)
         ctx.textAlign = 'right'
         ctx.fillStyle = '#846c5e'
-        ctx.font = '600 17px Arial, sans-serif'
-        ctx.fillText('BUILT BY TANUSH CHAWLA', 1155, 284)
+        ctx.font = '600 16px Arial, sans-serif'
+        ctx.fillText('BUILT BY TANUSH CHAWLA', 1155, 338)
 
         const texture = new THREE.CanvasTexture(canvas)
         texture.colorSpace = THREE.SRGBColorSpace
@@ -744,7 +751,7 @@ export class ScrollWorld
         )
         const signWidth = Math.min(building.width * 0.78, 7.6)
         sign.geometry.dispose()
-        sign.geometry = new THREE.PlaneGeometry(signWidth, signWidth / 3.75)
+        sign.geometry = new THREE.PlaneGeometry(signWidth, signWidth / (1200 / 360))
         sign.position.set(0, 4.62, frontZ + (frontZ > 0 ? 0.12 : -0.12))
         sign.rotation.y = frontZ < 0 ? Math.PI : 0
         sign.renderOrder = 4
@@ -793,6 +800,295 @@ export class ScrollWorld
         }
     }
 
+
+    addStreetLife()
+    {
+        // Roadside props add lived-in scale without a costly traffic simulation.
+        const steel = this.material('#53666a', { roughness: 0.62, metalness: 0.28 })
+        const darkRubber = this.material('#293439', { roughness: 0.98 })
+        const benchWood = this.material('#b78562', { roughness: 0.92 })
+        const planterClay = this.material('#ad7d70', { roughness: 0.92 })
+        const foliage = this.material('#5d9874', { roughness: 1 })
+        const glass = this.material('#a7d5d3', {
+            roughness: 0.22, metalness: 0.08, transparent: true, opacity: 0.52,
+            side: THREE.DoubleSide, depthWrite: false
+        })
+        const windowGlass = this.material('#c7e0dc', { roughness: 0.2, metalness: 0.05 })
+        const wheelGeometry = new THREE.CylinderGeometry(0.34, 0.34, 0.2, 10)
+        const carPaints = [
+            this.material('#e8d9c3', { roughness: 0.44, metalness: 0.12 }),
+            this.material('#b6c4bf', { roughness: 0.42, metalness: 0.14 }),
+            this.material('#b56f61', { roughness: 0.48, metalness: 0.1 }),
+            this.material('#5f7979', { roughness: 0.44, metalness: 0.14 }),
+            this.material('#d4b16f', { roughness: 0.48, metalness: 0.08 })
+        ]
+        const headlamp = new THREE.MeshBasicMaterial({ color: '#ffe5b1' })
+        const tailLamp = new THREE.MeshBasicMaterial({ color: '#d95f59' })
+        const addBox = (parent, geometry, material, x, y, z) =>
+        {
+            const mesh = new THREE.Mesh(geometry, material)
+            mesh.position.set(x, y, z)
+            mesh.castShadow = true
+            mesh.receiveShadow = true
+            parent.add(mesh)
+            return mesh
+        }
+
+        const addParkedCar = (t, sideSign, paintIndex) =>
+        {
+            const frame = this.routeFrame(t)
+            const car = new THREE.Group()
+            car.name = 'ParkedBoulevardCar'
+            car.position.copy(frame.position).addScaledVector(frame.side, sideSign * 11.15)
+            car.position.y = 0.12
+            car.rotation.y = frame.yaw
+            const paint = carPaints[paintIndex % carPaints.length]
+            addBox(car, new THREE.BoxGeometry(3.9, 0.7, 1.68), paint, 0, 0.72, 0)
+            addBox(car, new THREE.BoxGeometry(1.9, 0.56, 1.28), windowGlass, -0.03, 1.3, 0)
+            addBox(car, new THREE.BoxGeometry(1.12, 0.45, 1.32), paint, 0.95, 1.27, 0)
+            addBox(car, new THREE.BoxGeometry(0.13, 0.13, 0.48), headlamp, 1.98, 0.75, -0.48)
+            addBox(car, new THREE.BoxGeometry(0.13, 0.13, 0.48), headlamp, 1.98, 0.75, 0.48)
+            addBox(car, new THREE.BoxGeometry(0.11, 0.12, 0.38), tailLamp, -1.98, 0.75, -0.52)
+            addBox(car, new THREE.BoxGeometry(0.11, 0.12, 0.38), tailLamp, -1.98, 0.75, 0.52)
+            for(const x of [-1.18, 1.18])
+            {
+                for(const z of [-0.86, 0.86])
+                {
+                    const wheel = new THREE.Mesh(wheelGeometry, darkRubber)
+                    wheel.rotation.x = Math.PI / 2
+                    wheel.position.set(x, 0.39, z)
+                    wheel.castShadow = true
+                    car.add(wheel)
+                    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.215, 8), steel)
+                    hub.rotation.x = Math.PI / 2
+                    hub.position.set(x, 0.39, z * 1.01)
+                    car.add(hub)
+                }
+            }
+            this.group.add(car)
+        }
+        ;[
+            [0.765, -1, 0], [0.805, -1, 1], [0.845, 1, 2],
+            [0.885, -1, 3], [0.925, 1, 4], [0.97, -1, 0]
+        ].forEach(([t, side, paint]) => addParkedCar(t, side, paint))
+
+        const addBench = (t, sideSign) =>
+        {
+            const frame = this.routeFrame(t)
+            const bench = new THREE.Group()
+            bench.position.copy(frame.position).addScaledVector(frame.side, sideSign * 8.55)
+            bench.position.y = 0.12
+            bench.rotation.y = frame.yaw
+            for(const z of [-0.34, 0.34])
+                addBox(bench, new THREE.BoxGeometry(2.05, 0.11, 0.12), benchWood, 0, 0.58, z)
+            addBox(bench, new THREE.BoxGeometry(2.05, 0.48, 0.11), benchWood, 0, 0.86, 0.36)
+            for(const x of [-0.78, 0.78])
+            {
+                addBox(bench, new THREE.BoxGeometry(0.1, 0.55, 0.72), steel, x, 0.31, 0)
+                addBox(bench, new THREE.BoxGeometry(0.14, 0.11, 0.85), steel, x, 0.53, 0)
+            }
+            this.group.add(bench)
+        }
+        addBench(0.775, 1)
+        addBench(0.905, -1)
+
+        const addPlanter = (t, sideSign, radius = 0.47) =>
+        {
+            const frame = this.routeFrame(t)
+            const planter = new THREE.Group()
+            planter.position.copy(frame.position).addScaledVector(frame.side, sideSign * 9.0)
+            planter.position.y = 0.12
+            planter.rotation.y = frame.yaw
+            addBox(planter, new THREE.BoxGeometry(0.95, 0.5, 0.95), planterClay, 0, 0.25, 0)
+            const shrub = new THREE.Mesh(new THREE.IcosahedronGeometry(radius, 1), foliage)
+            shrub.position.set(0, 0.72, 0)
+            shrub.scale.set(1.05, 0.85, 1.05)
+            shrub.castShadow = true
+            planter.add(shrub)
+            this.group.add(planter)
+        }
+        ;[
+            [0.745, -1], [0.79, 1], [0.86, -1],
+            [0.905, 1], [0.945, -1], [0.98, 1]
+        ].forEach(([t, side]) => addPlanter(t, side))
+
+        const binMaterial = this.material('#687b77', { roughness: 0.82, metalness: 0.12 })
+        for(const [t, sideSign] of [[0.75, 1], [0.875, -1], [0.945, 1]])
+        {
+            const frame = this.routeFrame(t)
+            const bin = new THREE.Group()
+            bin.position.copy(frame.position).addScaledVector(frame.side, sideSign * 8.6)
+            bin.position.y = 0.12
+            bin.rotation.y = frame.yaw
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.31, 0.78, 10), binMaterial)
+            body.position.y = 0.43
+            bin.add(body)
+            const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.31, 0.31, 0.09, 10), steel)
+            lid.position.y = 0.85
+            bin.add(lid)
+            this.group.add(bin)
+        }
+
+        // Pedestrians provide human scale along the city footpaths.
+        const skin = this.material('#d7a27d', { roughness: 0.9 })
+        const trousers = this.material('#455864', { roughness: 0.95 })
+        const jackets = [
+            this.material('#d98d70', { roughness: 0.9 }),
+            this.material('#6b9c8d', { roughness: 0.9 }),
+            this.material('#d4b56f', { roughness: 0.9 }),
+            this.material('#7a7898', { roughness: 0.9 })
+        ]
+        const addPedestrian = (t, sideSign, outfitIndex, step = 0.18) =>
+        {
+            const frame = this.routeFrame(t)
+            const person = new THREE.Group()
+            person.name = 'BoulevardPedestrian'
+            person.position.copy(frame.position).addScaledVector(frame.side, sideSign * 8.35)
+            person.position.y = 0.12
+            person.rotation.y = frame.yaw + (sideSign > 0 ? Math.PI * 0.5 : -Math.PI * 0.5)
+            const legGeo = new THREE.BoxGeometry(0.17, 0.56, 0.18)
+            for(const [i, x] of [-0.12, 0.12].entries())
+            {
+                const leg = new THREE.Mesh(legGeo, trousers)
+                leg.position.set(x, 0.42, i === 0 ? step : -step)
+                person.add(leg)
+            }
+            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.28, 0.72, 7), jackets[outfitIndex % jackets.length])
+            torso.position.y = 1.0
+            torso.castShadow = true
+            person.add(torso)
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.19, 10, 8), skin)
+            head.position.set(0, 1.54, 0)
+            head.castShadow = true
+            person.add(head)
+            const hair = new THREE.Mesh(new THREE.SphereGeometry(0.195, 8, 6), darkRubber)
+            hair.position.set(0, 1.64, -0.025)
+            hair.scale.set(1, 0.62, 1)
+            person.add(hair)
+            for(const x of [-0.27, 0.27])
+            {
+                const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.09, 0.54, 7), jackets[outfitIndex % jackets.length])
+                arm.position.set(x, 1.02, 0)
+                arm.rotation.z = x > 0 ? -0.16 : 0.16
+                person.add(arm)
+            }
+            this.group.add(person)
+        }
+        ;[
+            [0.755, 1, 0, 0.15], [0.795, 1, 1, -0.12],
+            [0.865, -1, 2, 0.2], [0.9, 1, 3, -0.16],
+            [0.94, -1, 1, 0.1], [0.978, 1, 0, -0.12]
+        ].forEach(([t, side, outfit, step]) => addPedestrian(t, side, outfit, step))
+
+        // A glass-sided local bus shelter with a readable destination panel.
+        const shelterFrame = this.routeFrame(0.86)
+        const shelter = new THREE.Group()
+        shelter.name = 'CityBusStop'
+        shelter.position.copy(shelterFrame.position).addScaledVector(shelterFrame.side, 11.25)
+        shelter.position.y = 0.12
+        shelter.rotation.y = shelterFrame.yaw
+        for(const x of [-2.25, 2.25])
+        {
+            addBox(shelter, new THREE.BoxGeometry(0.12, 2.35, 0.12), steel, x, 1.18, 0)
+            addBox(shelter, new THREE.BoxGeometry(0.1, 1.75, 0.09), steel, x, 1.04, -0.7)
+        }
+        addBox(shelter, new THREE.BoxGeometry(4.7, 0.16, 1.55), this.material('#b78a72', { roughness: 0.75 }), 0, 2.38, 0)
+        addBox(shelter, new THREE.BoxGeometry(3.85, 0.12, 0.42), benchWood, 0, 0.62, 0.25)
+        const sidePanel = new THREE.Mesh(new THREE.BoxGeometry(4.35, 1.75, 0.045), glass)
+        sidePanel.position.set(0, 1.23, 0.68)
+        shelter.add(sidePanel)
+        if(typeof document !== 'undefined')
+        {
+            const canvas = document.createElement('canvas')
+            canvas.width = 512
+            canvas.height = 180
+            const ctx = canvas.getContext('2d')
+            if(ctx)
+            {
+                ctx.fillStyle = '#24484b'
+                ctx.fillRect(0, 0, canvas.width, canvas.height)
+                ctx.fillStyle = '#f7efd9'
+                ctx.font = '700 34px Arial, sans-serif'
+                ctx.fillText('GURUGRAM CITY BUS', 22, 58)
+                ctx.font = '600 27px Arial, sans-serif'
+                ctx.fillText('STOP 122  ·  CITY CENTRE', 22, 105)
+                ctx.fillStyle = '#f0bb83'
+                ctx.fillRect(22, 132, 165, 6)
+                const texture = new THREE.CanvasTexture(canvas)
+                texture.colorSpace = THREE.SRGBColorSpace
+                const board = new THREE.Mesh(
+                    new THREE.PlaneGeometry(2.45, 0.86),
+                    new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, toneMapped: false })
+                )
+                board.position.set(0, 2.03, -0.81)
+                shelter.add(board)
+            }
+        }
+        this.group.add(shelter)
+
+        // Pedestrian signals mark two crossings through the downtown section.
+        const signalHousing = this.material('#34464a', { roughness: 0.7, metalness: 0.2 })
+        const red = new THREE.MeshBasicMaterial({ color: '#e35f57' })
+        const amber = new THREE.MeshBasicMaterial({ color: '#e9b15f' })
+        const green = new THREE.MeshBasicMaterial({ color: '#79c59a' })
+        for(const [t, sideSign] of [[0.824, -1], [0.824, 1], [0.904, -1], [0.904, 1]])
+        {
+            const frame = this.routeFrame(t)
+            const signal = new THREE.Group()
+            signal.position.copy(frame.position).addScaledVector(frame.side, sideSign * 5.3)
+            signal.position.y = 0.12
+            signal.rotation.y = frame.yaw
+            const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.08, 2.65, 8), steel)
+            pole.position.y = 1.32
+            signal.add(pole)
+            const box = new THREE.Mesh(new THREE.BoxGeometry(0.48, 1.05, 0.36), signalHousing)
+            box.position.set(0, 2.36, -sideSign * 0.13)
+            signal.add(box)
+            for(const [lightIndex, material] of [red, amber, green].entries())
+            {
+                const light = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), material)
+                light.position.set(0, 2.68 - lightIndex * 0.31, -sideSign * 0.34)
+                signal.add(light)
+            }
+            this.group.add(signal)
+        }
+
+        // Direction signage gives the city edge a believable road layout.
+        const directionFrame = this.routeFrame(0.735)
+        const direction = new THREE.Group()
+        direction.position.copy(directionFrame.position).addScaledVector(directionFrame.side, -10.8)
+        direction.position.y = 2.8
+        direction.rotation.y = directionFrame.yaw
+        direction.add(new THREE.Mesh(new THREE.BoxGeometry(3.15, 1.18, 0.14), this.material('#24484b', { roughness: 0.72 })))
+        if(typeof document !== 'undefined')
+        {
+            const canvas = document.createElement('canvas')
+            canvas.width = 640
+            canvas.height = 240
+            const ctx = canvas.getContext('2d')
+            if(ctx)
+            {
+                ctx.fillStyle = '#24484b'
+                ctx.fillRect(0, 0, canvas.width, canvas.height)
+                ctx.fillStyle = '#f6f0df'
+                ctx.font = '700 35px Arial, sans-serif'
+                ctx.fillText('CITY CENTRE  →', 24, 82)
+                ctx.fillText('AIRPORT       →', 24, 158)
+                const texture = new THREE.CanvasTexture(canvas)
+                texture.colorSpace = THREE.SRGBColorSpace
+                const face = new THREE.Mesh(
+                    new THREE.PlaneGeometry(3.02, 1.05),
+                    new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, toneMapped: false })
+                )
+                face.position.z = 0.081
+                direction.add(face)
+            }
+        }
+        const signPole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.1, 2.1, 8), steel)
+        signPole.position.set(-1.1, -1.3, 0)
+        direction.add(signPole)
+        this.group.add(direction)
+    }
 
     addTramTracks()
     {
@@ -1375,9 +1671,10 @@ export class ScrollWorld
         ctx.fillRect(58, 258, 86, 8)
 
         ctx.fillStyle = '#3e5555'
-        ctx.font = '500 34px Arial, sans-serif'
-        let bodyY = 340
-        for(const line of item.lines.slice(0, 2))
+        const bodyLines = item.lines.slice(0, 3)
+        ctx.font = bodyLines.length > 2 ? '500 30px Arial, sans-serif' : '500 34px Arial, sans-serif'
+        let bodyY = bodyLines.length > 2 ? 310 : 340
+        for(const line of bodyLines)
         {
             ctx.fillText(line, 58, bodyY, 1260)
             bodyY += 58
@@ -1412,25 +1709,25 @@ export class ScrollWorld
             {
                 t: 0.13, side: -1, kicker: '02 / THE PERSON BEHIND THE BUILD',
                 title: 'AI. DATA. SYSTEMS.',
-                lines: ['Machine learning, analytics and backend engineering.', portfolio.about.note],
+                lines: ['Machine learning, data analytics and backend engineering.', 'Python, SQL, APIs and production-minded systems.', portfolio.about.note],
                 footer: 'CURIOSITY → USEFUL SOFTWARE', accent: '#3a9a8a'
             },
             {
                 t: 0.275, side: 1, kicker: '03 / TOOLS OF THE TRADE',
                 title: 'THE TOOLKIT',
-                lines: ['Python · SQL · C++ · JavaScript · ML · RAG', 'APIs · Power BI · Azure · Docker · Databases'],
+                lines: ['Python · SQL · C++ · JavaScript · React · Node.js', 'Machine learning · RAG · Analytics · Power BI', 'Azure · Docker · PostgreSQL · MongoDB'],
                 footer: 'PRACTICAL TOOLS, REAL SYSTEMS', accent: '#3a9a8a'
             },
             {
                 t: 0.48, side: -1, kicker: '04 / FROM LEARNING TO SHIPPING',
                 title: 'WORK IN MOTION',
-                lines: ['Backend Developer  ·  July 2026 — Present', 'Konverge Technologies  ·  Bluestock Fintech'],
+                lines: ['Backend Developer  ·  July 2026 — Present', 'Konverge Technologies  ·  IT/data analytics internship', 'Bluestock Fintech  ·  Backend development'],
                 footer: 'APIS  /  DATA  /  PRACTICAL ML', accent: '#cc805e'
             },
             {
                 t: 0.70, side: 1, kicker: '05 / SELECTED BUILDS',
                 title: 'BUILT & SHIPPED',
-                lines: ['GGN Home · NIDS · RAG Research Agent', 'Stashr · WeCode · DealRadar'],
+                lines: ['GGN Home · Real estate + AI · Live product', 'NIDS · Network security ML · RAG Research Agent', 'Stashr · WeCode · DealRadar · Apps and data tools'],
                 footer: 'IDEAS THAT LEAVE THE NOTEBOOK', accent: '#3a9a8a'
             },
             {
@@ -1442,19 +1739,19 @@ export class ScrollWorld
             {
                 t: 0.89, side: -1, kicker: '07 / CERTIFIED LEARNING',
                 title: 'CLOUD. AI. PRACTICE.',
-                lines: ['Microsoft Azure AI-102 · AI-900 · AZ-900', 'Google IT Support Professional Certificate'],
+                lines: ['Microsoft Azure AI-102 · AI-900 · AZ-900', 'Google IT Support Professional Certificate', 'Cloud fundamentals · AI services · App development'],
                 footer: 'LEARN IT  /  BUILD WITH IT', accent: '#3a9a8a'
             },
             {
                 t: 0.955, side: 1, kicker: '08 / PROGRESS YOU CAN POINT TO',
                 title: 'CONSISTENCY COMPOUNDS.',
-                lines: ['500+ DSA problems solved  ·  4 certifications', '8.59 CGPA  ·  90% CBSE  ·  GGN Home live'],
+                lines: ['500+ DSA problems solved · 4 industry certifications', '8.59 CGPA · 90% in CBSE Class X and XII', 'GGN Home live · Built and shipped a real product'],
                 footer: 'SMALL WINS, SHIPPED OFTEN', accent: '#cc805e'
             },
             {
                 t: 0.99, side: 1, kicker: '09 / THE NEXT DESTINATION',
                 title: 'LET’S BUILD WHAT’S NEXT.',
-                lines: [portfolio.contact.email, portfolio.contact.location + '  ·  ' + portfolio.links.github.replace('https://', '')],
+                lines: [portfolio.contact.email, portfolio.contact.location + ' · ' + portfolio.contact.phone, portfolio.links.linkedin.replace('https://www.', '') + ' · ' + portfolio.links.github.replace('https://', '')],
                 footer: 'SAY HELLO  /  BUILD SOMETHING USEFUL', accent: '#3a9a8a'
             }
         ]
