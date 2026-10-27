@@ -34,6 +34,7 @@ export class ScrollWorld
         this.addRiverAndWaterfall()
         this.addBridge()
         this.addCity()
+        this.addTramTracks()
         this.addLearningHub()
         this.addAirport()
 
@@ -424,6 +425,31 @@ export class ScrollWorld
             base.castShadow = true
             assembly.add(base)
 
+            // Storefront glass, recessed door and a warm awning make the city
+            // feel like a lived-in boulevard instead of an isolated box skyline.
+            const frontZ = -building.side * (building.depth / 2 + 0.085)
+            const storefront = new THREE.Mesh(
+                new THREE.BoxGeometry(building.width * 0.72, 1.52, 0.09),
+                windowMaterial
+            )
+            storefront.position.set(0, 1.28, frontZ)
+            assembly.add(storefront)
+
+            const shopDoor = new THREE.Mesh(
+                new THREE.BoxGeometry(0.62, 1.92, 0.12),
+                roofMaterials[(buildingIndex + 1) % roofMaterials.length]
+            )
+            shopDoor.position.set(building.width * 0.26, 0.99, frontZ - building.side * 0.07)
+            assembly.add(shopDoor)
+
+            const awning = new THREE.Mesh(
+                new THREE.BoxGeometry(building.width * 0.86, 0.18, 0.78),
+                roofMaterials[buildingIndex % roofMaterials.length]
+            )
+            awning.position.set(0, 2.3, frontZ - building.side * 0.36)
+            awning.castShadow = true
+            assembly.add(awning)
+
             const roof = new THREE.Mesh(
                 new THREE.BoxGeometry(building.width + 0.7, 0.36, building.depth + 0.7),
                 roofMaterials[buildingIndex % roofMaterials.length]
@@ -515,6 +541,50 @@ export class ScrollWorld
                 halo.position.copy(bulb.position)
                 this.group.add(halo)
             }
+        }
+    }
+
+
+    addTramTracks()
+    {
+        // Tram rails are a clear visual cue for the pastel city boulevard.
+        // They sit flush with the road surface and follow its full curvature.
+        const rails = []
+        for(let sample = 0; sample <= 180; sample++)
+        {
+            const t = 0.69 + sample / 180 * 0.31
+            const frame = this.routeFrame(t)
+            for(const sideSign of [-1, 1])
+            {
+                if(!rails[sideSign + 1])
+                    rails[sideSign + 1] = []
+
+                rails[sideSign + 1].push(
+                    frame.position.clone().addScaledVector(frame.side, sideSign * 0.84).setY(0.19)
+                )
+            }
+        }
+
+        const railMaterial = this.material('#a8a5a3', { roughness: 0.32, metalness: 0.52 })
+        for(const points of rails)
+        {
+            const curve = new THREE.CatmullRomCurve3(points)
+            const rail = new THREE.Mesh(new THREE.TubeGeometry(curve, 300, 0.047, 6, false), railMaterial)
+            rail.castShadow = true
+            this.group.add(rail)
+        }
+
+        const sleeperGeometry = new THREE.BoxGeometry(1.15, 0.07, 2.65)
+        const sleeperMaterial = this.material('#967b72', { roughness: 0.96 })
+        for(let t = 0.705; t < 0.995; t += 0.017)
+        {
+            const frame = this.routeFrame(t)
+            const sleeper = new THREE.Mesh(sleeperGeometry, sleeperMaterial)
+            sleeper.position.copy(frame.position)
+            sleeper.position.y = 0.115
+            sleeper.rotation.y = frame.yaw
+            sleeper.receiveShadow = true
+            this.group.add(sleeper)
         }
     }
 
