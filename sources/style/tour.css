@@ -1400,3 +1400,17 @@ body
         transition-duration: 0.01ms !important;
     }
 }
+
+
+/* Legacy proximity card remains in the DOM for the existing zone system and
+   smoke tests; the scroll portfolio uses the visible project-section cards. */
+.legacy-project-card
+{
+    display: none !important;
+}
+
+/* Keep navigation available when WebGL initialization fails. */
+.is-failed .masthead
+{
+    display: grid;
+}
