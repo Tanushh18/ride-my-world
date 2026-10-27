@@ -113,6 +113,32 @@ export class VisualVehicle
         addSphere(0.105, [ 0.665, 0.27, 0 ], 'accent', [ 0.72, 0.8, 1 ])
         addRoundedBox([ 0.09, 0.12, 0.2 ], 0.035, [ -0.59, 0.21, 0 ], 'accentWarm')
         addRoundedBox([ 0.08, 0.08, 0.13 ], 0.025, [ 0.68, 0.02, 0 ], 'accentCool')
+
+        // Small model details make the rider legible from a rear chase camera.
+        // Backpack, jacket seams, helmet stripe, mirrors, rack, and exhaust
+        // provide layered silhouettes instead of one flat humanoid primitive.
+        addRoundedBox([ 0.24, 0.31, 0.3 ], 0.065, [ -0.285, 0.71, 0 ], 'carPaintDark')
+        addRoundedBox([ 0.03, 0.21, 0.08 ], 0.015, [ -0.421, 0.72, 0 ], 'accentWarm')
+        addRoundedBox([ 0.025, 0.24, 0.06 ], 0.012, [ -0.188, 1.01, 0 ], 'accentWarm')
+        addRoundedBox([ 0.28, 0.035, 0.014 ], 0.008, [ -0.28, 0.18, 0.195 ], 'accent')
+        addRoundedBox([ 0.28, 0.035, 0.014 ], 0.008, [ -0.28, 0.18, -0.195 ], 'accent')
+
+        for(const side of [ -1, 1 ])
+        {
+            // A more defined shoulder and elbow break gives the rider a natural
+            // riding pose when the scooter banks around a bend.
+            addSphere(0.105, [ 0.095, 0.755, side * 0.145 ], 'carDark', [ 1.1, 0.93, 0.92 ])
+            addSphere(0.064, [ 0.285, 0.645, side * 0.205 ], 'carDark')
+            addTubeBetween([ -0.5, -0.11, side * 0.2 ], [ -0.11, -0.11, side * 0.2 ], 0.052, 'metal')
+            addTubeBetween([ -0.67, 0.41, side * 0.12 ], [ -0.25, 0.41, side * 0.12 ], 0.022, 'metal')
+        }
+
+        // Rear wheel fender, illuminated tail lamp, and a registration plate.
+        addRoundedBox([ 0.55, 0.11, 0.4 ], 0.055, [ -0.72, 0.05, 0 ], 'carPaint')
+        addRoundedBox([ 0.05, 0.09, 0.24 ], 0.018, [ -0.866, 0.2, 0 ], 'accentWarm')
+        addRoundedBox([ 0.045, 0.12, 0.23 ], 0.012, [ -0.835, -0.015, 0 ], 'metal')
+        addRoundedBox([ 0.18, 0.045, 0.035 ], 0.01, [ -0.48, -0.12, 0.235 ], 'carDark')
+        addRoundedBox([ 0.18, 0.045, 0.035 ], 0.01, [ -0.48, -0.12, -0.235 ], 'carDark')
     }
 
     setWheels()
