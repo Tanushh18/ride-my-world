@@ -62,7 +62,7 @@ export class ScrollTour
             const tangent = this.roadCurve.getTangentAt(stop.t).setY(0).normalize()
             const side = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize()
             const target = position.addScaledVector(side, stop.side * boardOffset)
-            target.y = window.innerWidth < 760 ? 2.55 : 2.95
+            target.y = window.innerWidth < 760 ? 2.68 : 3.28
             return { ...stop, target }
         })
 
@@ -86,7 +86,7 @@ export class ScrollTour
         this.progressBar = document.querySelector('.js-progress-bar')
         this.progressLabel = document.querySelector('.js-progress-label')
 
-        this.onScroll = () =>
+        this.measureScroll = () =>
         {
             if(this.sections.length < 2)
             {
@@ -116,6 +116,20 @@ export class ScrollTour
             const segmentProgress = THREE.MathUtils.clamp((scrollY - tops[index]) / segmentLength, 0, 1)
 
             this.targetProgress = mix(startStop, endStop, segmentProgress)
+        }
+
+        // Coalesce scroll events to one target measurement per animation frame.
+        // Camera motion stays in the renderer's frame loop and follows this target.
+        this.scrollFrame = 0
+        this.onScroll = () =>
+        {
+            if(this.scrollFrame)
+                return
+            this.scrollFrame = window.requestAnimationFrame(() =>
+            {
+                this.scrollFrame = 0
+                this.measureScroll()
+            })
         }
 
         this.onPointerMove = (event) =>
@@ -239,7 +253,7 @@ export class ScrollTour
         const delta = Math.min(this.game.ticker.delta || 1 / 60, 1 / 30)
         const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
         const immediateUpdate = immediate || reducedMotion
-        const progressDamping = 1 - Math.exp(-delta * (reducedMotion ? 18 : 5.2))
+        const progressDamping = 1 - Math.exp(-delta * (reducedMotion ? 18 : 6.4))
 
         this.progress = immediateUpdate
             ? this.targetProgress
@@ -317,9 +331,9 @@ export class ScrollTour
         this.cameraPosition.addScaledVector(this.side, this.pointer.x * 0.42)
         this.cameraPosition.y -= this.pointer.y * 0.16
 
-        const cameraDamping = immediateUpdate ? 1 : 1 - Math.exp(-delta * 5.3)
+        const cameraDamping = immediateUpdate ? 1 : 1 - Math.exp(-delta * 6.4)
         camera.position.lerp(this.cameraPosition, cameraDamping)
-        this.lookTarget.lerp(this.cameraTarget, immediateUpdate ? 1 : 1 - Math.exp(-delta * 6.1))
+        this.lookTarget.lerp(this.cameraTarget, immediateUpdate ? 1 : 1 - Math.exp(-delta * 7.3))
         camera.lookAt(this.lookTarget)
 
         const nextFov = mix(mix(53, 49, finale) + waterfall * 3.5 + cityReveal * 1.2 + scenicReveal * 3.4, 47.5, focusWeight)
@@ -341,6 +355,8 @@ export class ScrollTour
         window.removeEventListener('resize', this.onScroll)
         window.removeEventListener('pointermove', this.onPointerMove)
         document.querySelector('.js-tour-nav')?.removeEventListener('click', this.onNavClick)
+        if(this.scrollFrame)
+            window.cancelAnimationFrame(this.scrollFrame)
         this.observer?.disconnect()
     }
 }
