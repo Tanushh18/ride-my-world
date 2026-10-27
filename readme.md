@@ -1,76 +1,75 @@
-# Tanush Portfolio — Cinematic Scroll-Driven 3D Experience
+# Tanush Portfolio — Scroll-Driven 3D Scooter Journey
 
 **Live site:** https://ride-my-world.vercel.app/  
-**Repository:** https://github.com/Tanushh18/ride-my-world
+**Source:** https://github.com/Tanushh18/ride-my-world
 
-Tanush Portfolio is a scroll-driven portfolio built on an original, procedural Three.js world. Visitors use ordinary page scrolling to travel through an atmospheric jungle road, a river and waterfall crossing, a city skyline, a learning-campus landmark, and a final airport viewpoint. Real HTML content sits above the 3D canvas so project details remain accessible, selectable, and responsive.
+A personal portfolio by Tanush Chawla, built on Three.js/WebGPU with WebGL fallback. Browser scrolling is the throttle: a scooter and rider travel along a curved road while a chase camera, environment and story chapters follow the same route.
 
-## Experience
+The experience moves from a lush forest road into a river and waterfall crossing, across a pastel city boulevard with tram tracks and storefronts, past learning/campus architecture, and toward an airport/runway sunset. Resume content is rendered as real HTML so it remains readable, selectable, responsive and accessible.
 
-- Fixed WebGL canvas with a continuous scroll-controlled camera path.
-- Scroll sections for introduction, about, skills, experience, projects, education, experiments, and contact.
-- Procedural curved road, river, animated waterfall streams, bridge, city buildings, learning-campus landmark, and airport terminal/runway.
-- Stylized scooter and rider model retained in the world; mandatory driving controls are not required for browsing.
-- Project cards with verified GitHub links and current live links where known.
-- Mobile-aware layout, direct section navigation, progress indicator, and reduced-motion camera behavior.
-- Graceful fallback content if WebGL initialization fails.
-- A centralized resume-ready content file at `sources/data/portfolio.js`.
+## Highlights
 
-## Featured projects
+- One shared Catmull–Rom road curve drives the road geometry, rider position, wheel rotation, camera, and shadow focus.
+- Cinematic camera staging: establishing shot, close scooter chase, waterfall reveal, city skyline reveal, and wider airport finale.
+- Original procedural 3D environment: instanced roadside trees, faceted mountains, river/waterfall, bridge, city buildings, storefronts, sidewalk strips, tram rails, crosswalks, campus landmark and airport.
+- Custom sunset fog for distant geometry, stylized low-poly architecture, soft sky fill, warm rim lighting and directional shadows.
+- Real HTML story chapters: About, Skills, Experience, Projects, Education, Certifications, Achievements and Contact.
+- Resume-backed content is centralized in `sources/data/portfolio.js`.
+- Responsive nav, progress indicator, reduced-motion camera, downloadable resume link and contact actions.
+- Existing Rapier vehicle and debug controls remain available for physics testing; they are not required to navigate the public portfolio.
+- CI checks unit tests, production build and browser-level scooter/scroll/data behavior.
 
-- **Stashr** — encrypted password vault and project workspace. [GitHub](https://github.com/Tanushh18/password-manager)
-- **WeCode** — real-time collaborative coding platform. [Live](https://wecode-2.onrender.com) · [GitHub](https://github.com/Tanushh18/WeCode)
-- **DealRadar** — searchable deal discovery and price tracking. [Live](https://dealradar.ggnhome.com) · [GitHub](https://github.com/Tanushh18/Deal_Radar)
-- **RAG Intelligence Agent** — retrieval-augmented research workflows. [GitHub](https://github.com/Tanushh18/rag-intelligence-agent)
+## Professional information shown
 
-Project copy is intentionally concise and should be reviewed against each current repository before public use. Add verified contributions, outcomes, and more project details as they become available.
+The content module includes Tanush Chawla's AI/ML, data analytics and backend engineering summary; Python, SQL, C++, JavaScript, ML/AI, analytics, database, web and cloud skills; three roles/internships; education; Microsoft Azure credentials; achievements; and six project showcases.
 
-## Portfolio content
+Resume-derived projects are GGN Home, Network Intrusion Detection System (NIDS), and the RAG-Based Intelligence Research Agent. Additional existing repositories in the profile include Stashr, WeCode and DealRadar. Employment details remain exactly as represented in the resume, including “Product-Based Company” where no company name is provided.
 
-Update personal text and skill groups in `sources/data/portfolio.js`. Employment, education, email, LinkedIn, and resume-download details are kept generic or omitted until confirmed. The four project showcase cards currently live in `sources/index.html`; the proximity-system project metadata remains in `sources/data/projects.js` for compatibility with the underlying scene and tests.
+## Edit content
+
+Update `sources/data/portfolio.js` to revise the personal summary, skill groups, experience timeline, project descriptions and links, education, credentials, achievements, or contact details. The visual scene and section renderer do not need to be rewritten when content changes.
+
+The procedural world and scroll camera are implemented in:
+
+- `sources/Game/World/ScrollWorld.js`
+- `sources/Game/ScrollTour.js`
+- `sources/Game/World/VisualVehicle.js`
+- `sources/Game/Lighting.js`
+
+The page structure and responsive style live in `sources/index.html` and `sources/style/tour.css`.
 
 ## Development
 
-Requires Node.js 22 or a compatible current Node release.
+Requires Node.js 22 or a compatible current Node.js release.
 
 ```bash
 npm ci
 npm run dev
 ```
 
-Vite will print the local development URL.
+Vite uses `sources/` as its app root and serves the `static/` folder as public assets.
 
-## Tests and production build
+## Quality checks
 
 ```bash
 npm test
 npm run build
-npm run preview
+npm run smoke:tour
 ```
 
-The production output is written to the repository-root `dist/` directory.
+The browser smoke test assumes the Vite development server is already running at `http://127.0.0.1:5173` and Playwright Chromium is installed. It verifies renderer startup, the real resume sections, scooter travel, wheel rotation, camera movement and the contact details.
 
-A GitHub Actions workflow in `.github/workflows/ci.yml` is configured to run unit tests and the production build on pushes and pull requests.
-
-## Controls and accessibility
-
-Scrolling is the primary navigation. Use the header links to jump directly to the main sections. The scroll camera path can be retraced naturally by scrolling upward. The existing game driving controls are retained for debug and physics tests, not required for visitors.
-
-`prefers-reduced-motion` reduces the camera interpolation and interface transitions. When WebGL cannot initialize, the HTML portfolio content stays available.
+Production output is written to the root-level `dist/` directory.
 
 ## Vercel deployment
 
-Connect this repository to Vercel and deploy the `main` branch with:
-
 - **Framework preset:** Vite
-- **Root directory:** repository root (leave blank/default)
+- **Root directory:** repository root (blank/default)
 - **Build command:** `npm ci && npm run build`
 - **Output directory:** `dist`
 
-The Vite configuration already sets the application root to `sources/`, serves static assets from `static/`, and writes production output into the root-level `dist/` directory. Leave the Vercel root directory blank.
-
-With automatic deployments enabled, new commits on `main` trigger a deployment.
+The application root remains configured as `sources/` in `vite.config.js`.
 
 ## Attribution and licensing
 
-This repository began as a fork/adaptation of [MMubazar's car-game](https://github.com/MMubazar/car-game). Preserve upstream attribution and comply with the upstream license and any third-party asset or dependency licenses. Check the original repository's current license terms before redistribution or commercial reuse.
+This repository began as a fork/adaptation of [MMubazar's car-game](https://github.com/MMubazar/car-game). Preserve upstream attribution and follow the original repository's license terms, along with licenses for third-party dependencies and assets.
