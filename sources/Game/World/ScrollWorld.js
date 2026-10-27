@@ -132,7 +132,7 @@ export class ScrollWorld
         })
         const river = new THREE.Mesh(new THREE.PlaneGeometry(42, 15), riverMaterial)
         river.rotation.x = -Math.PI / 2
-        river.rotation.z = -0.42
+        river.rotation.y = -0.42
         river.position.set(8, 0.2, -32)
         river.receiveShadow = true
         this.group.add(river)
@@ -188,20 +188,20 @@ export class ScrollWorld
     addBridge()
     {
         const deck = new THREE.Mesh(
-            new THREE.BoxGeometry(15, 0.45, 8.8),
+            new THREE.BoxGeometry(18, 0.45, 8.8),
             this.material('#9a9c8f')
         )
-        deck.position.set(-8, 0.3, -20)
-        deck.rotation.y = -0.58
+        deck.position.set(8, 0.3, -27)
+        deck.rotation.y = 0.78
         deck.receiveShadow = true
         this.group.add(deck)
 
         const railMaterial = this.material('#e3c48e', { metalness: 0.12 })
         for(const side of [-1, 1])
         {
-            const rail = new THREE.Mesh(new THREE.BoxGeometry(15, 0.7, 0.16), railMaterial)
-            rail.position.set(-8, 0.78, -20 + side * 4.25)
-            rail.rotation.y = -0.58
+            const rail = new THREE.Mesh(new THREE.BoxGeometry(18, 0.7, 0.16), railMaterial)
+            rail.position.set(8, 0.78, -27 + side * 4.25)
+            rail.rotation.y = 0.78
             this.group.add(rail)
         }
     }
