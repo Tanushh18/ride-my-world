@@ -55,8 +55,12 @@ try
             energyNodes: game.world.scrollWorld.energyInstances?.count ?? 0,
             ambientMotes: game.world.scrollWorld.moteGeometry?.attributes.position.count ?? 0,
             storyBoards: game.world.scrollWorld.storyBoards?.length ?? 0,
-            flyingNote: Boolean(game.world.scrollWorld.paperNote?.group),
+            riftGates: game.world.scrollWorld.riftGates?.length ?? 0,
+            maxBannerLines: Math.max(0, ...(game.world.scrollWorld.storyBoardData ?? []).map(board => board.lines.length)),
             facadeLabels: game.world.scrollWorld.facadeLabels?.length ?? 0,
+            foregroundPanelsHidden: getComputedStyle(document.querySelector('#projects .story-inner')).display === 'none',
+            projectPopupHidden: getComputedStyle(document.querySelector('.legacy-project-card')).display === 'none',
+            flyingNote: Boolean(game.world.scrollWorld.paperNote?.group),
             aircraft: Boolean(game.world.scrollWorld.aircraft),
             airportPamphlet: Boolean(game.world.scrollWorld.airportPamphlet?.group),
             loaderProgress: getComputedStyle(document.querySelector('#portfolio-loader')).getPropertyValue('--loader-progress').trim()
@@ -89,14 +93,18 @@ try
         throw new Error('WebGL atmosphere particles missing; got ' + initial.ambientMotes)
     if(initial.storyBoards !== 9)
         throw new Error('Expected 9 readable in-world story boards; got ' + initial.storyBoards)
-    if(!initial.flyingNote)
-        throw new Error('Wind-blown portfolio note is missing from the 3D world')
+    if(initial.riftGates !== 3)
+        throw new Error('Expected 3 animated WebGL energy gates; got ' + initial.riftGates)
+    if(initial.maxBannerLines < 4)
+        throw new Error('Roadside banners are missing expanded details; max lines=' + initial.maxBannerLines)
+    if(!initial.foregroundPanelsHidden || !initial.projectPopupHidden)
+        throw new Error('Foreground information panels must stay hidden in banner-first ride mode')
+    if(initial.flyingNote || initial.airportPamphlet)
+        throw new Error('Floating information cards should be replaced by fixed roadside/banner information')
     if(initial.facadeLabels !== 6)
         throw new Error('Expected 6 project labels on city façades; got ' + initial.facadeLabels)
     if(!initial.aircraft)
         throw new Error('Airport aircraft is missing from the 3D world')
-    if(!initial.airportPamphlet)
-        throw new Error('Wind-blown airport pamphlet is missing from the 3D world')
     if(initial.loaderProgress !== '100%')
         throw new Error('Loader did not reach 100% after boot; got ' + initial.loaderProgress)
 
@@ -201,9 +209,12 @@ try
             scrollReactiveLightNodes: initial.energyNodes,
             ambientMotes: initial.ambientMotes,
             inWorldStoryBoards: initial.storyBoards,
+            maxBannerLines: initial.maxBannerLines,
             facadeProjectLabels: initial.facadeLabels,
+            animatedEnergyGates: initial.riftGates,
+            foregroundPanelsHidden: initial.foregroundPanelsHidden && initial.projectPopupHidden,
             parkedAircraft: initial.aircraft,
-            windblownNotes: { experience: initial.flyingNote, airport: initial.airportPamphlet }
+            floatingInformationCardsRemoved: !initial.flyingNote && !initial.airportPamphlet
         }
     }, null, 2))
 }
