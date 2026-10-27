@@ -3973,3 +3973,198 @@ html.is-ready .cinematic-loader.is-loader-finished
         transition: none !important;
     }
 }
+
+
+/* Readability pass: transparent editorial content must stay light against the
+   actual 3D scene. Older ivory-glass rules are intentionally overridden here. */
+.tour-content .story-inner:not(.hero-inner),
+.tour-content .story-inner-wide
+{
+    --tour-cream: #f7f0e2;
+    --tour-muted: rgba(247, 240, 226, 0.82);
+    --tour-line: rgba(247, 240, 226, 0.22);
+    --tour-accent: #f4bd8c;
+    --tour-teal: #a4e5d4;
+    color: var(--tour-cream);
+    text-shadow: 0 1px 18px rgba(8, 18, 23, 0.38);
+}
+
+.tour-content .story-inner:not(.hero-inner) .eyebrow,
+.tour-content .story-inner:not(.hero-inner) .section-lede,
+.tour-content .story-inner:not(.hero-inner) .section-copy,
+.tour-content .story-inner:not(.hero-inner) p,
+.tour-content .story-inner:not(.hero-inner) li,
+.tour-content .story-inner:not(.hero-inner) .tile-index,
+.tour-content .story-inner:not(.hero-inner) .experience-dates,
+.tour-content .story-inner:not(.hero-inner) .education-location,
+.tour-content .story-inner:not(.hero-inner) .certification-date,
+.tour-content .story-inner:not(.hero-inner) .achievement-index,
+.tour-content .story-inner:not(.hero-inner) .project-details,
+.tour-content .story-inner:not(.hero-inner) .signal-row
+{
+    color: var(--tour-muted) !important;
+    text-shadow: 0 1px 16px rgba(8, 18, 23, 0.45);
+}
+
+.tour-content .story-inner:not(.hero-inner) h2,
+.tour-content .story-inner:not(.hero-inner) h3,
+.tour-content .story-inner:not(.hero-inner) strong,
+.tour-content .story-inner:not(.hero-inner) .experience-serial,
+.tour-content .story-inner:not(.hero-inner) .education-index,
+.tour-content .story-inner:not(.hero-inner) .certification-index
+{
+    color: var(--tour-cream) !important;
+    text-shadow: 0 2px 22px rgba(8, 18, 23, 0.42);
+}
+
+.tour-content .story-inner:not(.hero-inner) h2 em,
+.tour-content .story-inner:not(.hero-inner) .experience-company,
+.tour-content .story-inner:not(.hero-inner) .contact-detail-label
+{
+    color: var(--tour-accent) !important;
+}
+
+.tour-content .story-inner:not(.hero-inner) .signal-row
+{
+    border-color: rgba(247, 240, 226, 0.22);
+}
+
+.tour-content .story-inner:not(.hero-inner) .tile-tags span,
+.tour-content .story-inner:not(.hero-inner) .project-tags span
+{
+    border-color: rgba(247, 240, 226, 0.26) !important;
+    background: rgba(14, 31, 36, 0.42) !important;
+    color: rgba(255, 248, 234, 0.92) !important;
+}
+
+.tour-content .story-inner:not(.hero-inner) .profile-links a
+{
+    border-color: rgba(247, 240, 226, 0.28) !important;
+    background: rgba(14, 31, 36, 0.38) !important;
+    color: #fff8ea !important;
+}
+
+.tour-content .story-inner:not(.hero-inner) .education-result
+{
+    color: var(--tour-teal) !important;
+}
+
+.tour-content .story-inner:not(.hero-inner) .experience-dot
+{
+    background: #244a4d;
+    border-color: var(--tour-accent);
+}
+
+.tour-content .story-inner:not(.hero-inner) .contact-detail
+{
+    border-color: rgba(247, 240, 226, 0.24);
+    background: rgba(14, 31, 36, 0.5);
+}
+
+.tour-content .story-inner:not(.hero-inner) .contact-detail-value
+{
+    color: #fff8ea !important;
+}
+
+.tour-content .projects-section .story-inner-wide
+{
+    --tour-cream: #fff8ea;
+    --tour-muted: rgba(255, 248, 234, 0.82);
+    color: #fff8ea;
+}
+
+.tour-content .projects-section .project-card
+{
+    --tour-cream: #fff8ea;
+    --tour-muted: rgba(255, 248, 234, 0.82);
+    color: #fff8ea !important;
+    text-shadow: 0 1px 16px rgba(8, 18, 23, 0.4);
+}
+
+.tour-content .projects-section .project-topline,
+.tour-content .projects-section .project-card .project-subtitle,
+.tour-content .projects-section .project-card .project-description,
+.tour-content .projects-section .project-card .project-details
+{
+    color: rgba(255, 248, 234, 0.82) !important;
+}
+
+.tour-content .projects-section .project-card h3
+{
+    color: #fff8ea !important;
+}
+
+.tour-content .projects-section .project-number
+{
+    color: #f4bd8c !important;
+}
+
+.tour-content .projects-section .project-category
+{
+    color: #b9e8d8 !important;
+}
+
+.tour-content .projects-section .project-tags span
+{
+    border-color: rgba(255, 248, 234, 0.24) !important;
+    background: rgba(14, 31, 36, 0.42) !important;
+    color: #fff8ea !important;
+}
+
+/* A soft editorial wash protects text while leaving the world visible. */
+.tour-content .story-section::before
+{
+    background:
+        linear-gradient(90deg, rgba(10, 27, 32, 0.82) 0%, rgba(10, 27, 32, 0.58) 31%, rgba(10, 27, 32, 0.16) 63%, rgba(10, 27, 32, 0.02) 100%);
+}
+
+.tour-content .story-section:has(.story-inner-right)::before
+{
+    background:
+        linear-gradient(270deg, rgba(10, 27, 32, 0.84) 0%, rgba(10, 27, 32, 0.58) 31%, rgba(10, 27, 32, 0.16) 63%, rgba(10, 27, 32, 0.02) 100%);
+}
+
+.tour-content .projects-section::before
+{
+    background:
+        linear-gradient(90deg, rgba(10, 27, 32, 0.88), rgba(10, 27, 32, 0.66) 38%, rgba(10, 27, 32, 0.28) 78%),
+        linear-gradient(0deg, rgba(10, 27, 32, 0.24), transparent 60%);
+}
+
+.tour-content .contact-section::before
+{
+    background:
+        radial-gradient(ellipse at 48% 48%, rgba(10, 27, 32, 0.6), rgba(10, 27, 32, 0.16) 70%),
+        linear-gradient(0deg, rgba(10, 27, 32, 0.5), rgba(10, 27, 32, 0.1));
+}
+
+.tour-content .story-inner:not(.hero-inner)
+{
+    max-width: min(100%, 54rem);
+}
+
+.tour-content .story-inner-right
+{
+    margin-left: auto;
+    margin-right: 0;
+}
+
+@media (max-width: 760px)
+{
+    .tour-content .story-section::before,
+    .tour-content .story-section:has(.story-inner-right)::before
+    {
+        background: linear-gradient(180deg, rgba(10, 27, 32, 0.82), rgba(10, 27, 32, 0.54) 55%, rgba(10, 27, 32, 0.28));
+    }
+
+    .tour-content .story-section
+    {
+        padding-top: 6rem;
+        padding-bottom: 5rem;
+    }
+
+    .tour-content .story-inner:not(.hero-inner) h2
+    {
+        font-size: clamp(2.7rem, 11vw, 5.1rem);
+    }
+}
