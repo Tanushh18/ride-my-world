@@ -2497,3 +2497,66 @@ a.contact-detail-value:hover
         animation: none;
     }
 }
+
+
+
+/* Let the 3D environment remain the hero: panels are readable glass, not opaque
+   page-sized cards that cover the moving road and city behind them. */
+.story-section::before
+{
+    background: linear-gradient(90deg, rgba(11, 25, 29, 0.4), rgba(11, 25, 29, 0.13) 48%, rgba(11, 25, 29, 0.015));
+}
+
+.story-section:nth-child(even)::before
+{
+    background: linear-gradient(270deg, rgba(11, 25, 29, 0.42), rgba(11, 25, 29, 0.14) 52%, rgba(11, 25, 29, 0.015));
+}
+
+.story-inner
+{
+    border-color: rgba(246, 240, 223, 0.14);
+    background: linear-gradient(145deg, rgba(17, 35, 39, 0.58), rgba(21, 38, 43, 0.4));
+    box-shadow: 0 1.6rem 4rem rgba(2, 12, 14, 0.08);
+    backdrop-filter: blur(4px);
+}
+
+.hero-inner
+{
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+}
+
+.projects-section .story-inner-wide
+{
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    padding-right: clamp(0.2rem, 1vw, 1rem);
+    padding-left: clamp(0.2rem, 1vw, 1rem);
+}
+
+.project-card
+{
+    background: linear-gradient(155deg, rgba(24, 39, 49, 0.78), rgba(19, 35, 45, 0.59));
+    backdrop-filter: blur(5px);
+    box-shadow: 0 1rem 2.5rem rgba(5, 17, 18, 0.14);
+}
+
+@media (max-width: 760px)
+{
+    .story-inner
+    {
+        background: rgba(18, 37, 42, 0.61);
+        backdrop-filter: blur(4px);
+    }
+
+    .hero-inner,
+    .projects-section .story-inner-wide
+    {
+        background: transparent;
+        backdrop-filter: none;
+    }
+}
