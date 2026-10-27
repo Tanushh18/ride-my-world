@@ -1173,7 +1173,7 @@ export class ScrollWorld
         const floorRingGeometry = new THREE.TorusGeometry(1.68, 0.035, 5, 48)
         const curtainGeometry = new THREE.PlaneGeometry(2.9, 3.8)
         const configurations = [
-            { t: 0.595, side: 1, color: '#82f7dc', second: '#c7a1ff' },
+            { t: 0.565, side: -1, color: '#82f7dc', second: '#c7a1ff' },
             { t: 0.775, side: 1, color: '#ffc889', second: '#83f3dc' },
             { t: 0.99, side: -1, color: '#9fc6ff', second: '#f1a5db' }
         ]
