@@ -554,12 +554,12 @@ export class ScrollWorld
         {
             const t = 0.69 + sample / 180 * 0.31
             const frame = this.routeFrame(t)
-            for(const sideSign of [-1, 1])
+            for(const [railIndex, sideSign] of [-1, 1].entries())
             {
-                if(!rails[sideSign + 1])
-                    rails[sideSign + 1] = []
+                if(!rails[railIndex])
+                    rails[railIndex] = []
 
-                rails[sideSign + 1].push(
+                rails[railIndex].push(
                     frame.position.clone().addScaledVector(frame.side, sideSign * 0.84).setY(0.19)
                 )
             }
