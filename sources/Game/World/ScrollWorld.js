@@ -238,7 +238,7 @@ export class ScrollWorld
         const river = new THREE.Mesh(new THREE.PlaneGeometry(48, 16), this.riverMaterial)
         river.rotation.x = -Math.PI / 2
         river.rotation.y = -0.86
-        river.position.set(8, 0.018, -28)
+        river.position.set(15, 0.018, -34)
         river.renderOrder = 0
         this.group.add(river)
 
@@ -246,7 +246,7 @@ export class ScrollWorld
         for(const sideSign of [-1, 1])
         {
             const bank = new THREE.Mesh(new THREE.BoxGeometry(47, 0.55, 1.5), bankMaterial)
-            bank.position.set(8 + sideSign * 2, 0.03, -28 + sideSign * 8.9)
+            bank.position.set(15 + sideSign * 2, 0.03, -34 + sideSign * 8.9)
             bank.rotation.y = -0.86
             bank.receiveShadow = true
             this.group.add(bank)
@@ -258,7 +258,7 @@ export class ScrollWorld
             new THREE.BoxGeometry(12, 9.2, 2.8),
             this.material('#8f7772', { roughness: 1 })
         )
-        cliff.position.set(47, 4.35, -45)
+        cliff.position.set(24, 4.35, -35)
         cliff.castShadow = true
         cliff.receiveShadow = true
         this.group.add(cliff)
@@ -273,7 +273,7 @@ export class ScrollWorld
                 depthWrite: false
             })
         )
-        waterfallFace.position.set(47, 4.2, -46.45)
+        waterfallFace.position.set(24, 4.2, -36.45)
         this.group.add(waterfallFace)
 
         for(let i = 0; i < 9; i++)
@@ -288,7 +288,7 @@ export class ScrollWorld
                     depthWrite: false
                 })
             )
-            stream.position.set(42.1 + i * 1.22, 3.5 + (i % 3) * 0.1, -46.48)
+            stream.position.set(19.1 + i * 1.22, 3.5 + (i % 3) * 0.1, -36.48)
             this.group.add(stream)
             this.waterfallStreams.push(stream)
         }
@@ -302,7 +302,7 @@ export class ScrollWorld
         for(let i = 0; i < 12; i++)
         {
             const mist = new THREE.Mesh(new THREE.SphereGeometry(0.8 + (i % 4) * 0.2, 8, 6), mistMaterial)
-            mist.position.set(41.5 + (i % 4) * 2.7, 0.45 + (i % 3) * 0.12, -44.2 + Math.floor(i / 4) * 0.65)
+            mist.position.set(18.5 + (i % 4) * 2.7, 0.45 + (i % 3) * 0.12, -34.2 + Math.floor(i / 4) * 0.65)
             mist.scale.y = 0.48
             this.group.add(mist)
         }
@@ -310,7 +310,7 @@ export class ScrollWorld
 
     addBridge()
     {
-        const frame = this.routeFrame(0.49)
+        const frame = this.routeFrame(0.60)
         const bridge = new THREE.Group()
         bridge.position.set(frame.position.x, 0.08, frame.position.z)
         bridge.rotation.y = frame.yaw
