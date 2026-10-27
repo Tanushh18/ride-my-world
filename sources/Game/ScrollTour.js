@@ -6,7 +6,19 @@ const smoothstep = (edge0, edge1, value) =>
     const t = clamp((value - edge0) / (edge1 - edge0), 0, 1)
     return t * t * (3 - 2 * t)
 }
+const smootherstep = (edge0, edge1, value) =>
+{
+    const t = clamp((value - edge0) / (edge1 - edge0), 0, 1)
+    return t * t * t * (t * (t * 6 - 15) + 10)
+}
 const mix = (a, b, t) => a + (b - a) * t
+
+// Relaxed ride pace: the scooter eases toward the scroll target gently and can
+// never travel faster than this fraction of the whole route per second.
+const MAX_PROGRESS_SPEED = 0.04
+const PROGRESS_EASE = 2.6
+const BANNER_DWELL_MS = 1800
+const DWELL_SKIP_GUARD_MS = 500
 
 /**
  * Scroll is the throttle for one continuous scooter ride.
@@ -22,6 +34,8 @@ export class ScrollTour
         this.game = game
         this.active = true
         this.progress = 0
+        // Multiplies ride and camera easing speed; tests on slow software renderers raise it.
+        this.paceScale = 1
         this.targetProgress = 0
         this.lookTarget = new THREE.Vector3()
         this.ridePosition = new THREE.Vector3()
@@ -34,6 +48,7 @@ export class ScrollTour
         this.vehicleQuaternion = new THREE.Quaternion()
         this.bannerPauseAt = null
         this.bannerPauseUntil = 0
+        this.bannerPauseStart = 0
         this.bannerPauseCount = 0
         this.rollQuaternion = new THREE.Quaternion()
         this.pointer = { x: 0, y: 0 }
@@ -140,6 +155,14 @@ export class ScrollTour
             })
         }
 
+        // Any deliberate input after a short guard ends the reading pause, so
+        // the dwell can never trap keyboard, wheel or touch users.
+        this.onSkipInput = () =>
+        {
+            if(this.bannerPauseAt !== null && performance.now() - this.bannerPauseStart > DWELL_SKIP_GUARD_MS)
+                this.bannerPauseUntil = 0
+        }
+
         this.onPointerMove = (event) =>
         {
             if(event.pointerType === 'touch')
@@ -199,6 +222,9 @@ export class ScrollTour
         window.addEventListener('scroll', this.onScroll, { passive: true })
         window.addEventListener('resize', this.onScroll)
         window.addEventListener('pointermove', this.onPointerMove, { passive: true })
+        window.addEventListener('wheel', this.onSkipInput, { passive: true })
+        window.addEventListener('touchmove', this.onSkipInput, { passive: true })
+        window.addEventListener('keydown', this.onSkipInput)
         this.onScroll()
 
         const camera = this.game.view.camera
@@ -261,11 +287,13 @@ export class ScrollTour
         const delta = Math.min(this.game.ticker.delta || 1 / 60, 1 / 30)
         const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
         const immediateUpdate = immediate || reducedMotion
-        const progressDamping = 1 - Math.exp(-delta * (reducedMotion ? 18 : 6.4))
+        const progressDamping = 1 - Math.exp(-delta * PROGRESS_EASE * this.paceScale)
+        const maxStep = MAX_PROGRESS_SPEED * delta * this.paceScale
+        const eased = (this.targetProgress - this.progress) * progressDamping
         const proposedProgress = clamp(
             immediateUpdate
                 ? this.targetProgress
-                : this.progress + (this.targetProgress - this.progress) * progressDamping,
+                : this.progress + clamp(eased, -maxStep, maxStep),
             0,
             1
         )
@@ -297,7 +325,7 @@ export class ScrollTour
             const approachedBanner = !crossedBanner && !immediateUpdate && !reducedMotion
                 ? this.storyFocusStops.find(stop =>
                     Math.abs(this.targetProgress - stop.t) < 0.0008
-                    && Math.abs(proposedProgress - stop.t) < 0.0018
+                    && Math.abs(proposedProgress - stop.t) < 0.0012
                     && Math.abs(this.progress - stop.t) > 0.0001)
                 : null
             const dwellBanner = crossedBanner ?? approachedBanner
@@ -306,7 +334,8 @@ export class ScrollTour
             {
                 this.progress = dwellBanner.t
                 this.bannerPauseAt = dwellBanner.t
-                this.bannerPauseUntil = now + 1450
+                this.bannerPauseStart = now
+                this.bannerPauseUntil = now + BANNER_DWELL_MS
                 this.bannerPauseCount++
             }
             else
@@ -350,8 +379,8 @@ export class ScrollTour
         let focusStop = null
         for(const stop of this.storyFocusStops)
         {
-            const enter = smoothstep(stop.t - 0.04, stop.t - 0.012, this.progress)
-            const leave = 1 - smoothstep(stop.t + 0.012, stop.t + 0.04, this.progress)
+            const enter = smootherstep(stop.t - 0.055, stop.t - 0.006, this.progress)
+            const leave = 1 - smootherstep(stop.t + 0.006, stop.t + 0.055, this.progress)
             const weight = enter * leave
             if(weight > focusWeight)
             {
@@ -390,41 +419,35 @@ export class ScrollTour
         // sign view and makes the printed copy legible.
         if(focusStop && focusWeight > 0.001)
         {
-            const distance = window.innerWidth < 760 ? 5.25 : 5.35
+            // Fit the whole board with margins for the current viewport, leaving
+            // headroom for the fixed navigation and the bottom HUD.
+            const size = this.game.world.scrollWorld.storyBoardSize ?? { width: 8.2, height: 4.7 }
+            const aspect = Math.max(0.3, window.innerWidth / Math.max(1, window.innerHeight))
+            const halfTan = Math.tan(THREE.MathUtils.degToRad(54) / 2)
+            const fitHeight = (size.height * 1.42) / (2 * halfTan)
+            const fitWidth = (size.width * 1.16) / (2 * halfTan * aspect)
+            const distance = Math.max(5.3, fitHeight, fitWidth)
             this.bannerCameraPosition.copy(focusStop.target)
                 .addScaledVector(focusStop.normal, distance)
             this.bannerCameraPosition.y = focusStop.target.y + (window.innerWidth < 760 ? 0.04 : 0.08)
             this.cameraPosition.lerp(this.bannerCameraPosition, focusWeight)
         }
 
-        const cameraEase = focusWeight > 0.72 ? 10.5 : 6.4
-        const targetEase = focusWeight > 0.72 ? 12.5 : 7.3
-        const cameraDamping = immediateUpdate ? 1 : 1 - Math.exp(-delta * cameraEase)
-        const heldOnBanner = focusStop
-            && this.bannerPauseAt === focusStop.t
-            && focusWeight > 0.999
-
-        if(heldOnBanner)
-        {
-            // The easing has already carried the camera most of the way here.
-            // Lock the final frame to the sign face while the reading pause runs.
-            camera.position.copy(this.cameraPosition)
-            this.lookTarget.copy(this.cameraTarget)
-        }
-        else
-        {
-            camera.position.lerp(this.cameraPosition, cameraDamping)
-            this.lookTarget.lerp(this.cameraTarget, immediateUpdate ? 1 : 1 - Math.exp(-delta * targetEase))
-        }
+        const cameraEase = mix(3.4, 6.2, focusWeight)
+        const targetEase = mix(4.2, 7.5, focusWeight)
+        const cameraDamping = immediateUpdate ? 1 : 1 - Math.exp(-delta * cameraEase * this.paceScale)
+        camera.position.lerp(this.cameraPosition, cameraDamping)
+        this.lookTarget.lerp(this.cameraTarget, immediateUpdate ? 1 : 1 - Math.exp(-delta * targetEase * this.paceScale))
         camera.lookAt(this.lookTarget)
 
         const sceneFov = mix(53, 49, finale) + waterfall * 3.5 + cityReveal * 1.2 + scenicReveal * 3.4
         const nextFov = mix(sceneFov, 54, focusWeight)
-        if(Math.abs(nextFov - this.lastFov) > 0.25)
+        const fovNext = this.lastFov + (nextFov - this.lastFov) * (immediateUpdate ? 1 : 1 - Math.exp(-delta * 3 * this.paceScale))
+        if(Math.abs(fovNext - this.lastFov) > 0.002)
         {
-            camera.fov = nextFov
+            camera.fov = fovNext
             camera.updateProjectionMatrix()
-            this.lastFov = nextFov
+            this.lastFov = fovNext
         }
 
         if(this.progressBar)
@@ -437,6 +460,9 @@ export class ScrollTour
         window.removeEventListener('scroll', this.onScroll)
         window.removeEventListener('resize', this.onScroll)
         window.removeEventListener('pointermove', this.onPointerMove)
+        window.removeEventListener('wheel', this.onSkipInput)
+        window.removeEventListener('touchmove', this.onSkipInput)
+        window.removeEventListener('keydown', this.onSkipInput)
         document.querySelector('.js-tour-nav')?.removeEventListener('click', this.onNavClick)
         if(this.scrollFrame)
             window.cancelAnimationFrame(this.scrollFrame)

@@ -29,8 +29,8 @@ try
     if(await page.evaluate(() => document.documentElement.classList.contains('is-failed')))
         throw new Error('3D initialization failed: ' + await page.locator('.js-error-message').textContent())
 
-    await page.waitForFunction(() => Boolean(window.game?.view?.scrollTour), null, { timeout: 30000 })
-    await page.waitForFunction(() => window.game.ticker.frame > 8, null, { timeout: 30000 })
+    await page.waitForFunction(() => Boolean(window.game?.view?.scrollTour), null, { timeout: 90000 })
+    await page.waitForFunction(() => window.game.ticker.frame > 8, null, { timeout: 90000 })
 
     const initial = await page.evaluate(() =>
     {
@@ -112,6 +112,8 @@ try
     {
         document.documentElement.style.scrollBehavior = 'auto'
         const tour = window.game.view.scrollTour
+        // Software rendering runs at a few fps; speed the capped ride pace up.
+        tour.paceScale = 40
         const projects = document.getElementById('projects')
         const education = document.getElementById('education')
         const start = projects.getBoundingClientRect().top + window.scrollY
@@ -138,7 +140,7 @@ try
         && window.game.view.scrollTour.bannerPauseAt === 0.70
         && window.game.view.scrollTour.storyFocusWeight > 0.99,
         null,
-        { timeout: 30000 }
+        { timeout: 90000 }
     )
     // Let the damped camera finish its final face-on rotation while the
     // intentional banner dwell is still active.
@@ -191,7 +193,7 @@ try
         throw new Error('Camera is not facing the banner directly; dot=' + midRide.bannerFacingDot.toFixed(3))
 
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight - window.innerHeight))
-    await page.waitForFunction(() => window.game.view.scrollTour.progress > 0.96, null, { timeout: 30000 })
+    await page.waitForFunction(() => window.game.view.scrollTour.progress > 0.96, null, { timeout: 90000 })
 
     const endRide = await page.evaluate(() => ({
         progress: window.game.view.scrollTour.progress,

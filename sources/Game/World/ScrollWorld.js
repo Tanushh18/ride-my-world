@@ -1774,201 +1774,211 @@ export class ScrollWorld
     createStoryTexture(item, index, count)
     {
         const compact = window.innerWidth < 760
+        const W = compact ? 1000 : 1792
+        const H = compact ? 1600 : 1012
         const canvas = document.createElement('canvas')
-        canvas.width = compact ? 1000 : 1400
-        canvas.height = compact ? 1550 : 800
+        canvas.width = W
+        canvas.height = H
         const ctx = canvas.getContext('2d')
         if(!ctx)
             return null
 
-        if(compact)
+        const accent = item.accent ?? '#c27b5b'
+        const margin = compact ? 56 : 80
+        const headerH = compact ? 118 : 108
+        const footerH = compact ? 120 : 96
+        const textWidth = W - margin * 2
+        const family = 'Arial, "Helvetica Neue", sans-serif'
+        const font = (weight, size) => weight + ' ' + size + 'px ' + family
+
+        const wrap = (text, width) =>
         {
-            const gradient = ctx.createLinearGradient(0, 0, 1000, 1550)
-            gradient.addColorStop(0, '#fff9ec')
-            gradient.addColorStop(1, '#e9d7bd')
-            ctx.fillStyle = gradient
-            ctx.fillRect(0, 0, 1000, 1550)
-
-            ctx.fillStyle = 'rgba(49, 79, 79, 0.035)'
-            for(let x = 24; x < 1000; x += 32)
-                for(let y = 20; y < 1550; y += 34)
-                    ctx.fillRect(x, y, 1.5, 1.5)
-
-            ctx.fillStyle = '#31565a'
-            ctx.fillRect(0, 0, 12, 1550)
-            ctx.fillStyle = '#42676a'
-            ctx.font = '700 26px Arial, sans-serif'
-            ctx.fillText('T. / TANUSH CHAWLA', 58, 76)
-            ctx.textAlign = 'left'
-            ctx.fillStyle = '#846c5e'
-            ctx.font = '600 20px Arial, sans-serif'
-            ctx.fillText(item.kicker.toUpperCase(), 58, 118, 870)
-
-            ctx.strokeStyle = 'rgba(49, 86, 90, 0.24)'
-            ctx.lineWidth = 2
-            ctx.beginPath()
-            ctx.moveTo(58, 150)
-            ctx.lineTo(940, 150)
-            ctx.stroke()
-
-            let titleSize = 58
-            ctx.font = '700 ' + titleSize + 'px Arial, sans-serif'
-            while(ctx.measureText(item.title).width > 875 && titleSize > 34)
-            {
-                titleSize -= 2
-                ctx.font = '700 ' + titleSize + 'px Arial, sans-serif'
-            }
-            ctx.fillStyle = '#18383d'
-            ctx.fillText(item.title, 58, 245, 875)
-            ctx.fillStyle = item.accent ?? '#c27b5b'
-            ctx.fillRect(58, 283, 110, 8)
-
-            const hasLongCopy = item.lines.some(line => line.length > 45)
-            const bodyFontSize = hasLongCopy ? 30 : 34
-            const lineStep = hasLongCopy ? 46 : 52
-            ctx.font = '500 ' + bodyFontSize + 'px Arial, sans-serif'
-            ctx.fillStyle = '#3e5555'
-            let bodyY = 360
-            let renderedRows = 0
-            for(const line of item.lines.slice(0, 4))
-            {
-                let current = ''
-                for(const word of String(line).split(/\s+/))
-                {
-                    const candidate = current ? current + ' ' + word : word
-                    if(current && ctx.measureText(candidate).width > 875)
-                    {
-                        if(renderedRows >= 18)
-                            break
-                        ctx.fillText(current, 58, bodyY)
-                        bodyY += lineStep
-                        renderedRows++
-                        current = word
-                    }
-                    else
-                        current = candidate
-                }
-                if(current && renderedRows < 18)
-                {
-                    ctx.fillText(current, 58, bodyY, 875)
-                    bodyY += lineStep
-                    renderedRows++
-                }
-                if(renderedRows >= 18)
-                    break
-            }
-
-            ctx.strokeStyle = 'rgba(49, 86, 90, 0.22)'
-            ctx.beginPath()
-            ctx.moveTo(58, 1375)
-            ctx.lineTo(940, 1375)
-            ctx.stroke()
-            ctx.fillStyle = '#42676a'
-            ctx.font = '700 24px Arial, sans-serif'
-            ctx.fillText(item.footer.toUpperCase(), 58, 1420, 875)
-            ctx.textAlign = 'right'
-            ctx.fillStyle = '#b46d54'
-            ctx.font = '700 24px Arial, sans-serif'
-            ctx.fillText(String(index + 1).padStart(2, '0') + ' / ' + String(count).padStart(2, '0'), 938, 1490)
-
-            const mobileTexture = new THREE.CanvasTexture(canvas)
-            mobileTexture.colorSpace = THREE.SRGBColorSpace
-            mobileTexture.anisotropy = Math.min(8, this.game.rendering.renderer.capabilities?.getMaxAnisotropy?.() ?? 1)
-            mobileTexture.needsUpdate = true
-            return mobileTexture
-        }
-
-        const wash = ctx.createLinearGradient(0, 0, 1400, 800)
-        wash.addColorStop(0, '#fff9ec')
-        wash.addColorStop(1, '#e9d7bd')
-        ctx.fillStyle = wash
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-        ctx.fillStyle = 'rgba(49, 79, 79, 0.035)'
-        for(let x = 24; x < canvas.width; x += 34)
-            for(let y = 20; y < canvas.height; y += 34)
-                ctx.fillRect(x, y, 1.5, 1.5)
-
-        ctx.fillStyle = '#31565a'
-        ctx.fillRect(0, 0, 12, canvas.height)
-        ctx.font = '700 24px Arial, sans-serif'
-        ctx.fillStyle = '#42676a'
-        ctx.fillText('T.  /  TANUSH CHAWLA', 58, 66)
-        ctx.textAlign = 'right'
-        ctx.fillStyle = '#846c5e'
-        ctx.font = '600 18px Arial, sans-serif'
-        ctx.fillText(item.kicker.toUpperCase(), 1335, 66)
-        ctx.textAlign = 'left'
-
-        ctx.strokeStyle = 'rgba(49, 86, 90, 0.24)'
-        ctx.lineWidth = 2
-        ctx.beginPath()
-        ctx.moveTo(58, 100)
-        ctx.lineTo(1340, 100)
-        ctx.stroke()
-
-        let titleSize = 76
-        ctx.font = '700 ' + titleSize + 'px Arial, sans-serif'
-        while(ctx.measureText(item.title).width > 1280 && titleSize > 46)
-        {
-            titleSize -= 2
-            ctx.font = '700 ' + titleSize + 'px Arial, sans-serif'
-        }
-        ctx.fillStyle = '#18383d'
-        ctx.fillText(item.title, 58, 218)
-
-        ctx.fillStyle = item.accent ?? '#c27b5b'
-        ctx.fillRect(58, 258, 86, 8)
-
-        ctx.fillStyle = '#3e5555'
-        const bodyLines = item.lines.slice(0, 4)
-        const hasLongCopy = bodyLines.some(line => line.length > 74)
-        const bodyFontSize = hasLongCopy ? 24 : bodyLines.length > 3 ? 27 : 30
-        ctx.font = '500 ' + bodyFontSize + 'px Arial, sans-serif'
-        const lineStep = hasLongCopy ? 43 : bodyLines.length > 3 ? 47 : 52
-        let bodyY = 290
-        let renderedRows = 0
-
-        // Wrap the original resume copy instead of truncating it to one canvas line.
-        // A board can use up to eight visual rows while keeping the footer clear.
-        for(const line of bodyLines)
-        {
-            const words = String(line).split(/\s+/)
+            const rows = []
             let current = ''
-            for(const word of words)
+            for(const word of String(text).split(/\s+/))
             {
                 const candidate = current ? current + ' ' + word : word
-                if(current && ctx.measureText(candidate).width > 1260)
+                if(current && ctx.measureText(candidate).width > width)
                 {
-                    if(renderedRows >= 8)
-                        break
-                    ctx.fillText(current, 58, bodyY)
-                    bodyY += lineStep
-                    renderedRows++
+                    rows.push(current)
                     current = word
                 }
                 else
                     current = candidate
             }
-
-            if(current && renderedRows < 8)
-            {
-                ctx.fillText(current, 58, bodyY, 1260)
-                bodyY += lineStep
-                renderedRows++
-            }
-            if(renderedRows >= 8)
-                break
+            if(current)
+                rows.push(current)
+            return rows
         }
 
-        ctx.fillStyle = '#42676a'
-        ctx.font = '700 21px Arial, sans-serif'
-        ctx.fillText(item.footer.toUpperCase(), 58, 710)
+        // Paper wash with a quiet dot grid.
+        const wash = ctx.createLinearGradient(0, 0, W, H)
+        wash.addColorStop(0, '#fffaf0')
+        wash.addColorStop(1, '#eadcc3')
+        ctx.fillStyle = wash
+        ctx.fillRect(0, 0, W, H)
+        ctx.fillStyle = 'rgba(49, 79, 79, 0.035)'
+        for(let x = 24; x < W; x += 34)
+            for(let y = headerH; y < H - footerH; y += 34)
+                ctx.fillRect(x, y, 1.5, 1.5)
 
+        // Header band: brand left, section label right.
+        ctx.fillStyle = '#24484b'
+        ctx.fillRect(0, 0, W, headerH)
+        ctx.fillStyle = accent
+        ctx.fillRect(0, headerH - 6, W, 6)
+        ctx.textBaseline = 'middle'
+        ctx.textAlign = 'left'
+        ctx.fillStyle = '#fff4e0'
+        ctx.font = font(700, compact ? 28 : 30)
+        ctx.fillText('T.  /  TANUSH CHAWLA', margin, (headerH - 6) / 2)
+        if(!compact)
+        {
+            ctx.textAlign = 'right'
+            ctx.fillStyle = '#f2d2b0'
+            ctx.font = font(600, 22)
+            ctx.fillText(item.kicker.toUpperCase(), W - margin, (headerH - 6) / 2, 980)
+        }
+        ctx.textAlign = 'left'
+        ctx.textBaseline = 'alphabetic'
+
+        let y = headerH + (compact ? 56 : 30)
+        if(compact)
+        {
+            ctx.fillStyle = '#846c5e'
+            ctx.font = font(700, 24)
+            const kickerRows = wrap(item.kicker.toUpperCase(), textWidth).slice(0, 2)
+            for(const row of kickerRows)
+            {
+                ctx.fillText(row, margin, y)
+                y += 34
+            }
+            y += 18
+        }
+
+        // Title: shrink first, then fall back to two rows.
+        let titleSize = compact ? 68 : 92
+        const minTitle = compact ? 40 : 60
+        ctx.font = font(800, titleSize)
+        while(ctx.measureText(item.title).width > textWidth && titleSize > minTitle)
+        {
+            titleSize -= 2
+            ctx.font = font(800, titleSize)
+        }
+        const titleRows = ctx.measureText(item.title).width > textWidth
+            ? wrap(item.title, textWidth).slice(0, 2)
+            : [item.title]
+        ctx.fillStyle = '#18383d'
+        y += titleSize * 0.9
+        for(const row of titleRows)
+        {
+            ctx.fillText(row, margin, y)
+            y += titleSize * 1.08
+        }
+        y -= titleSize * 0.52
+        ctx.fillStyle = accent
+        ctx.fillRect(margin, y, compact ? 120 : 150, 9)
+        y += compact ? 56 : 62
+
+        // Body: bulleted rows with optional "Label:" lead-ins, fitted to the
+        // space between the title block and the footer.
+        const lines = item.lines.slice(0, 8)
+        const bodyBottom = H - footerH - (compact ? 28 : 26)
+        const bodyHeight = bodyBottom - y
+        const bullet = compact ? 34 : 38
+        const parsed = lines.map(line =>
+        {
+            const match = /^([^:·|—]{2,22}):\s+(.*)$/.exec(String(line))
+            return match ? { label: match[1].toUpperCase(), text: match[2] } : { label: '', text: String(line) }
+        })
+
+        let size = compact ? 40 : 36
+        let layout = null
+        for(; size >= (compact ? 24 : 20); size -= 1)
+        {
+            const step = size * 1.34
+            const gap = size * 0.55
+            ctx.font = font(500, size)
+            let total = 0
+            const rows = parsed.map(entry =>
+            {
+                let text = entry.text
+                let labelWidth = 0
+                if(entry.label)
+                {
+                    ctx.font = font(800, size * 0.74)
+                    labelWidth = ctx.measureText(entry.label).width + 16
+                    ctx.font = font(500, size)
+                }
+                const wrapped = wrap(entry.label ? text : text, textWidth - bullet - labelWidth)
+                total += wrapped.length * step + gap
+                return { entry, wrapped, labelWidth }
+            })
+            if(total - gap <= bodyHeight)
+            {
+                layout = { rows, step, gap }
+                break
+            }
+        }
+        if(!layout)
+        {
+            const step = size * 1.34
+            layout = {
+                rows: parsed.map(entry => ({ entry, wrapped: wrap(entry.text, textWidth - bullet), labelWidth: 0 })),
+                step,
+                gap: size * 0.4
+            }
+        }
+
+        let rowY = y + size * 0.82
+        for(const row of layout.rows)
+        {
+            ctx.fillStyle = accent
+            ctx.beginPath()
+            ctx.arc(margin + 9, rowY - size * 0.32, size * 0.17, 0, Math.PI * 2)
+            ctx.fill()
+            if(row.entry.label)
+            {
+                ctx.font = font(800, size * 0.74)
+                ctx.fillStyle = '#42676a'
+                ctx.fillText(row.entry.label, margin + bullet, rowY)
+            }
+            ctx.font = font(500, size)
+            ctx.fillStyle = '#34504f'
+            row.wrapped.forEach((text, rowIndex) =>
+            {
+                ctx.fillText(text, margin + bullet + (rowIndex === 0 ? row.labelWidth : row.labelWidth), rowY + rowIndex * layout.step)
+            })
+            rowY += row.wrapped.length * layout.step + layout.gap
+        }
+
+        // Footer band: tagline left, counter + progress pips right.
+        ctx.fillStyle = '#24484b'
+        ctx.fillRect(0, H - footerH, W, footerH)
+        ctx.fillStyle = accent
+        ctx.fillRect(0, H - footerH, W, 5)
+        ctx.textBaseline = 'middle'
+        ctx.fillStyle = '#fff4e0'
+        ctx.font = font(700, compact ? 22 : 24)
+        const footerMid = H - footerH / 2 + 2
+        ctx.fillText(item.footer.toUpperCase(), margin, footerMid, compact ? textWidth - 150 : 1100)
         ctx.textAlign = 'right'
-        ctx.fillStyle = '#b46d54'
-        ctx.font = '700 24px Arial, sans-serif'
-        ctx.fillText(String(index + 1).padStart(2, '0') + ' / ' + String(count).padStart(2, '0'), 1338, 710)
+        ctx.fillStyle = '#f2d2b0'
+        ctx.font = font(800, compact ? 26 : 30)
+        ctx.fillText(String(index + 1).padStart(2, '0') + ' / ' + String(count).padStart(2, '0'), W - margin, footerMid - (compact ? 0 : 16))
+        if(!compact)
+        {
+            const pipW = 22
+            const pipGap = 8
+            const pipsWidth = count * pipW + (count - 1) * pipGap
+            for(let pip = 0; pip < count; pip++)
+            {
+                ctx.fillStyle = pip === index ? accent : 'rgba(255, 244, 224, 0.28)'
+                ctx.fillRect(W - margin - pipsWidth + pip * (pipW + pipGap), footerMid + 16, pipW, 6)
+            }
+        }
+        ctx.textAlign = 'left'
+        ctx.textBaseline = 'alphabetic'
 
         const texture = new THREE.CanvasTexture(canvas)
         texture.colorSpace = THREE.SRGBColorSpace
@@ -1984,17 +1994,23 @@ export class ScrollWorld
             {
                 t: 0.025, side: 1, kicker: '01 / THE BEGINNING',
                 title: portfolio.name.toUpperCase(),
-                lines: [portfolio.roleLine.replaceAll(' · ', ' / '), 'AI / ML  ·  DATA ANALYTICS  ·  BACKEND SYSTEMS', 'Product engineering, analytics and applied machine learning', portfolio.location + '  ·  Scroll to ride through my work'],
+                lines: [
+                    'Role: AI/ML · Data Analytics · Backend Engineering',
+                    'Focus: Product engineering, analytics and applied machine learning',
+                    'Live work: GGN Home, a production real-estate platform',
+                    'Based in: ' + portfolio.location,
+                    'Journey: Scroll to ride through my work'
+                ],
                 footer: 'BUILD  /  ANALYSE  /  SHIP', accent: '#cc805e'
             },
             {
                 t: 0.13, side: -1, kicker: '02 / THE PERSON BEHIND THE BUILD',
                 title: 'AI. DATA. SYSTEMS.',
                 lines: [
-                    'AI/ML and data analytics with a strong foundation in statistical analysis and backend engineering.',
-                    'Exploratory data analysis, feature engineering and end-to-end model development using Python and SQL.',
-                    'Production REST APIs and deployed data-driven applications.',
-                    'Microsoft-certified across Azure cloud and AI services.'
+                    'Foundation: AI/ML and data analytics with strong statistical analysis and backend engineering.',
+                    'Analysis: Exploratory data analysis, feature engineering and end-to-end model development with Python and SQL.',
+                    'Backend: Production REST APIs and deployed data-driven applications.',
+                    'Certified: Microsoft Azure cloud and AI services.'
                 ],
                 footer: 'CURIOSITY → USEFUL SOFTWARE', accent: '#3a9a8a'
             },
@@ -2005,7 +2021,9 @@ export class ScrollWorld
                     'Languages: Python · SQL · C++ · JavaScript',
                     'AI / ML: Regression · Classification · Clustering · Scikit-learn · LangChain · RAG · LLMs',
                     'Data: Pandas · NumPy · Matplotlib · Power BI · Excel · EDA · Feature Engineering',
-                    'Databases: MySQL · PostgreSQL · MongoDB | Web: React · Node · Express · REST APIs | Cloud: Git · Docker · Azure · Jupyter'
+                    'Databases: MySQL · PostgreSQL · MongoDB',
+                    'Web: React.js · Node.js · Express.js · REST APIs',
+                    'Cloud: Git · Docker · Microsoft Azure · Jupyter Notebook'
                 ],
                 footer: 'PRACTICAL TOOLS, REAL SYSTEMS', accent: '#3a9a8a'
             },
@@ -2013,10 +2031,11 @@ export class ScrollWorld
                 t: 0.405, side: -1, kicker: '04 / PROFESSIONAL EXPERIENCE · 01 OF 03',
                 title: 'BACKEND DEVELOPER',
                 lines: [
-                    'Product-Based Company · July 2026 – Present',
-                    'Develop and maintain backend services and REST APIs powering a production-grade product platform.',
-                    'Collaborate with cross-functional teams to design scalable, maintainable server-side architecture.',
-                    'Work across databases and cloud infrastructure to improve application performance and reliability.'
+                    'Company: Product-Based Company',
+                    'Dates: July 2026 – Present',
+                    'Services: Develop and maintain backend services and REST APIs powering a production-grade product platform.',
+                    'Teamwork: Collaborate with cross-functional teams to design scalable, maintainable server-side architecture.',
+                    'Impact: Work across databases and cloud infrastructure to improve application performance and reliability.'
                 ],
                 footer: 'PRODUCTION APIs  /  DATABASES  /  CLOUD', accent: '#cc805e'
             },
@@ -2024,10 +2043,11 @@ export class ScrollWorld
                 t: 0.465, side: 1, kicker: '04 / PROFESSIONAL EXPERIENCE · 02 OF 03',
                 title: 'IT INTERN',
                 lines: [
-                    'Konverge Technologies Pvt. Ltd. · June 2025 – August 2025 · Gurugram, India',
-                    'Analysed IT operations datasets to identify recurring incident patterns and service delivery trends.',
-                    'Performed data cleaning, preprocessing, and exploratory data analysis using Python and Excel.',
-                    'Applied machine learning techniques to automate ticket categorisation and priority prediction.'
+                    'Company: Konverge Technologies Pvt. Ltd.',
+                    'Dates: June 2025 – August 2025 · Gurugram, India',
+                    'Analysis: Analysed IT operations datasets to identify recurring incident patterns and service delivery trends.',
+                    'Data prep: Performed data cleaning, preprocessing, and exploratory data analysis using Python and Excel.',
+                    'ML: Applied machine learning techniques to automate ticket categorisation and priority prediction.'
                 ],
                 footer: 'DATA CLEANING  /  EDA  /  MACHINE LEARNING', accent: '#3a9a8a'
             },
@@ -2035,10 +2055,10 @@ export class ScrollWorld
                 t: 0.535, side: -1, kicker: '04 / PROFESSIONAL EXPERIENCE · 03 OF 03',
                 title: 'SOFTWARE DEVELOPMENT INTERN',
                 lines: [
-                    'Bluestock Fintech · April 2025 – May 2025 · Remote',
-                    'Contributed to backend development for fintech applications using Node.js and REST APIs.',
-                    'Designed and queried MongoDB collections supporting core financial application workflows.',
-                    'Focus: backend engineering, API integration and application data modelling.'
+                    'Company: Bluestock Fintech',
+                    'Dates: April 2025 – May 2025 · Remote',
+                    'Backend: Contributed to backend development for fintech applications using Node.js and REST APIs.',
+                    'Data: Designed and queried MongoDB collections supporting core financial application workflows.'
                 ],
                 footer: 'NODE.JS  /  REST APIs  /  MONGODB', accent: '#cc805e'
             },
@@ -2046,10 +2066,12 @@ export class ScrollWorld
                 t: 0.70, side: 1, kicker: '05 / SELECTED BUILDS',
                 title: 'BUILT & SHIPPED',
                 lines: [
-                    'GGN Home · Live real estate platform with role-based dashboards and AI recommendations.',
-                    'NIDS · Network traffic classification for DoS, Probe, R2L and U2R attacks.',
-                    'RAG Research Agent · Document ingestion, semantic retrieval and grounded AI responses.',
-                    'Stashr · WeCode · DealRadar · Encrypted vault, collaborative coding and deal discovery.'
+                    'GGN Home: Live real estate platform with role-based dashboards and AI recommendations.',
+                    'NIDS: Network traffic classification for DoS, Probe, R2L and U2R attacks (NSL-KDD, Flask, Docker).',
+                    'RAG Agent: Document ingestion, embeddings and grounded answers with LangChain and vector databases.',
+                    'Stashr: Encrypted vault and project workspace (AES-256-GCM, TOTP).',
+                    'WeCode: Real-time collaborative coding (MERN, Socket.IO, WebRTC).',
+                    'DealRadar: Deal discovery with deduplication, price tracking and notifications.'
                 ],
                 footer: 'IDEAS THAT LEAVE THE NOTEBOOK', accent: '#3a9a8a'
             },
@@ -2057,10 +2079,11 @@ export class ScrollWorld
                 t: 0.82, side: 1, kicker: '06 / THE LEARNING ROUTE',
                 title: 'THE FOUNDATION',
                 lines: [
-                    'B.Tech · Computer Science Engineering — Artificial Intelligence & Machine Learning.',
-                    'VIT Bhopal University · CGPA 8.59 / 10.',
-                    'Senior Secondary (CBSE XII) · Blue Bells Model School, Gurugram · 90%.',
-                    'Secondary (CBSE X) · Our Lady of Fatima Convent School, Gurugram · 90%.'
+                    'B.Tech: Computer Science Engineering — Artificial Intelligence & Machine Learning',
+                    'University: VIT Bhopal University · CGPA 8.59 / 10',
+                    'Coursework: Applied ML, Neural Networks, Deep Learning, Reinforcement Learning, Data Mining, DBMS, Data Structures',
+                    'Class XII: CBSE · Blue Bells Model School, Gurugram · 90%',
+                    'Class X: CBSE · Our Lady of Fatima Convent School, Gurugram · 90%'
                 ],
                 footer: 'ML  /  DEEP LEARNING  /  DBMS  /  DATA STRUCTURES', accent: '#cc805e'
             },
@@ -2068,10 +2091,10 @@ export class ScrollWorld
                 t: 0.89, side: -1, kicker: '07 / CERTIFIED LEARNING',
                 title: 'CLOUD. AI. PRACTICE.',
                 lines: [
-                    'Azure AI Apps and Agents Developer Associate (AI-102) · September 2026.',
-                    'Azure AI Fundamentals (AI-900) · June 2026.',
-                    'Azure Fundamentals (AZ-900) · May 2026.',
-                    'Google IT Support Professional Certificate · Google / Coursera.'
+                    'AI-102: Azure AI Apps and Agents Developer Associate · September 2026',
+                    'AI-900: Azure AI Fundamentals · June 2026',
+                    'AZ-900: Azure Fundamentals · May 2026',
+                    'Google: IT Support Professional Certificate · Google / Coursera'
                 ],
                 footer: 'CLOUD FUNDAMENTALS  /  AI SERVICES', accent: '#3a9a8a'
             },
@@ -2079,10 +2102,10 @@ export class ScrollWorld
                 t: 0.955, side: 1, kicker: '08 / PROGRESS YOU CAN POINT TO',
                 title: 'CONSISTENCY COMPOUNDS.',
                 lines: [
-                    '500+ DSA problems solved across LeetCode and HackerRank.',
-                    '4 industry certifications, including three Microsoft Azure credentials.',
-                    '8.59 B.Tech CGPA and 90% in both CBSE Class X and XII.',
-                    'GGN Home independently designed, built and deployed as a live product.'
+                    '500+: DSA problems solved across LeetCode and HackerRank.',
+                    '04: Industry certifications, including three Microsoft Azure credentials.',
+                    '8.59: B.Tech CGPA, with 90% in both CBSE Class X and XII.',
+                    'LIVE: GGN Home independently designed, built and deployed as a live product.'
                 ],
                 footer: 'SMALL WINS, SHIPPED OFTEN', accent: '#cc805e'
             },
@@ -2090,10 +2113,11 @@ export class ScrollWorld
                 t: 0.99, side: 1, kicker: '09 / THE NEXT DESTINATION',
                 title: 'LET’S BUILD WHAT’S NEXT.',
                 lines: [
-                    portfolio.contact.email,
-                    portfolio.contact.phone,
-                    portfolio.contact.location + ' · India',
-                    'LinkedIn: ' + portfolio.links.linkedin.replace('https://www.linkedin.com/in/', '') + ' · GitHub: ' + portfolio.handle
+                    'Email: ' + portfolio.contact.email,
+                    'Phone: ' + portfolio.contact.phone,
+                    'Location: ' + portfolio.contact.location + ' · India',
+                    'LinkedIn: ' + portfolio.links.linkedin.replace('https://www.linkedin.com/in/', ''),
+                    'GitHub: ' + portfolio.handle
                 ],
                 footer: 'SAY HELLO  /  BUILD SOMETHING USEFUL', accent: '#3a9a8a'
             }
@@ -2103,6 +2127,7 @@ export class ScrollWorld
         const boardWidth = compact ? 2.3 : 8.2
         const boardHeight = compact ? 3.58 : 4.7
         this.storyBoardOffset = compact ? 6.35 : 8.25
+        this.storyBoardSize = { width: boardWidth, height: boardHeight }
         const backingMaterial = this.material('#24484b', { roughness: 0.62, metalness: 0.24 })
         const legMaterial = this.material('#4b5b59', { roughness: 0.55, metalness: 0.36 })
         const panelGeometry = new THREE.BoxGeometry(boardWidth, boardHeight, 0.2)
