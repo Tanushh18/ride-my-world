@@ -1,5 +1,6 @@
 import './style/index.css'
 import './style/tour.css'
+import './style/system.css'
 import { Game } from './Game/Game.js'
 import { ScrollTour } from './Game/ScrollTour.js'
 import portfolio from './data/portfolio.js'
