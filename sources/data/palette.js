@@ -4,13 +4,13 @@
  */
 export default {
     // Sky and atmosphere
-    skyZenith: '#183447',
-    skyHorizon: '#f5bc83',
-    fog: '#f5bc83',
-    sun: '#fff0c8',
+    skyZenith: '#34334e',
+    skyHorizon: '#e6a09d',
+    fog: '#e6a09d',
+    sun: '#ffe7c4',
 
     // Soft cool shadows keep the foliage readable in the warm light.
-    shadow: '#b3a0b4',
+    shadow: '#82738f',
 
     // Ground
     grassLight: '#9dc879',
@@ -31,18 +31,18 @@ export default {
     rockDark: '#77796c',
     concrete: '#d6d8ca',
     wood: '#c88754',
-    metal: '#8eaaa7',
+    metal: '#b0a3a2',
 
     // Scooter and rider
-    carPaint: '#e7734d',
-    carPaintDark: '#ba4e39',
-    carDark: '#25383b',
-    carGlass: '#9bd7cc',
-    tyre: '#1f292a',
-    rim: '#ede5d3',
+    carPaint: '#e9ad50',
+    carPaintDark: '#b96f44',
+    carDark: '#2b2a3c',
+    carGlass: '#8ed6d6',
+    tyre: '#292832',
+    rim: '#f2dfc0',
 
     // Accents for project signage and interactive elements
     accent: '#ffd17f',
-    accentWarm: '#e56d55',
-    accentCool: '#68d5c0'
+    accentWarm: '#e45c5e',
+    accentCool: '#78d9d1'
 }
