@@ -63,7 +63,9 @@ try
             flyingNote: Boolean(game.world.scrollWorld.paperNote?.group),
             aircraft: Boolean(game.world.scrollWorld.aircraft),
             airportPamphlet: Boolean(game.world.scrollWorld.airportPamphlet?.group),
-            loaderProgress: getComputedStyle(document.querySelector('#portfolio-loader')).getPropertyValue('--loader-progress').trim()
+            loaderProgress: getComputedStyle(document.querySelector('#portfolio-loader')).getPropertyValue('--loader-progress').trim(),
+            life: (() => { const life = game.world.scrollWorld.life; return life ? { failed: life.failed, counts: life.counts, built: life.built } : null })(),
+            cineBars: document.querySelectorAll('.cine-bar').length
         }
     })
 
@@ -105,7 +107,30 @@ try
         throw new Error('Expected 6 project labels on city façades; got ' + initial.facadeLabels)
     if(!initial.aircraft)
         throw new Error('Airport aircraft is missing from the 3D world')
-    if(initial.loaderProgress !== '100%')
+    if(!initial.life?.built)
+        throw new Error('World life systems did not finish building')
+    if(initial.life.failed.length)
+        throw new Error('World life systems failed to build: ' + initial.life.failed.join(', '))
+    {
+        const { vegetation, wildlife, traffic, pedestrians, roadProps, airport, effects } = initial.life.counts
+        if((vegetation?.total ?? 0) < 200)
+            throw new Error('Expected a rich, multi-species vegetation layer; got ' + vegetation?.total)
+        if(!(wildlife?.flyingBirds > 0 && wildlife?.deer > 0 && wildlife?.fish > 0 && wildlife?.butterflies > 0))
+            throw new Error('Wildlife missing: ' + JSON.stringify(wildlife))
+        if(!(traffic?.moving > 0 && traffic?.parked > 0 && traffic?.bus === 1))
+            throw new Error('Traffic missing: ' + JSON.stringify(traffic))
+        if(!(pedestrians?.walkers > 0 && pedestrians?.crossers > 0 && pedestrians?.cyclists > 0))
+            throw new Error('Pedestrians missing: ' + JSON.stringify(pedestrians))
+        if(!(roadProps?.dashes > 0 && roadProps?.crossings === 4 && roadProps?.utilityPoles > 0))
+            throw new Error('Road props missing: ' + JSON.stringify(roadProps))
+        if(!(airport?.runwayLights > 0 && airport?.service > 0))
+            throw new Error('Airport extras missing: ' + JSON.stringify(airport))
+        if(!(effects?.spray > 0 && effects?.sparkle > 0))
+            throw new Error('Effects missing: ' + JSON.stringify(effects))
+    }
+    if(initial.cineBars !== 2)
+        throw new Error('Cinematic letterbox bars are missing')
+    if(parseFloat(initial.loaderProgress) < 99.5)
         throw new Error('Loader did not reach 100% after boot; got ' + initial.loaderProgress)
 
     await page.evaluate(() =>

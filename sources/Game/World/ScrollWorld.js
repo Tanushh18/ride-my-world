@@ -1,6 +1,7 @@
 import * as THREE from 'three/webgpu'
 import { color as tslColor, mix as tslMix, uniform as tslUniform } from 'three/tsl'
 import portfolio from '../../data/portfolio.js'
+import { WorldLife } from './Life/WorldLife.js'
 
 const smoothstep = (edge0, edge1, value) =>
 {
@@ -72,7 +73,20 @@ export class ScrollWorld
             this.animateWater()
             this.animateEffects()
             this.animateStorytelling()
+            this.life?.update()
         }, 30)
+    }
+
+    /**
+     * Vegetation, wildlife, traffic, pedestrians, road props and effects are
+     * layered on after the core scene (they read board positions) and built in
+     * steps so the loader stays responsive.
+     */
+    async buildLife(report)
+    {
+        this.life = new WorldLife(this)
+        await this.life.build(report)
+        return this.life
     }
 
     material(hexColor, options = {})
@@ -1032,7 +1046,7 @@ export class ScrollWorld
         const red = new THREE.MeshBasicMaterial({ color: '#e35f57' })
         const amber = new THREE.MeshBasicMaterial({ color: '#e9b15f' })
         const green = new THREE.MeshBasicMaterial({ color: '#79c59a' })
-        for(const [t, sideSign] of [[0.824, -1], [0.824, 1], [0.904, -1], [0.904, 1]])
+        for(const [t, sideSign] of [[0.841, -1], [0.841, 1], [0.912, -1], [0.912, 1]])
         {
             const frame = this.routeFrame(t)
             const signal = new THREE.Group()

@@ -46,11 +46,17 @@ export class Game
         this.readyPromise = this.init()
     }
 
-    setLoadingStage(stage, title, note)
+    setLoadingStage(stage, title, note, progress)
     {
         document.dispatchEvent(new CustomEvent('portfolio:loading', {
-            detail: { stage, title, note }
+            detail: { stage, title, note, progress }
         }))
+    }
+
+    /** Let the browser paint (and the loader animate) between heavy steps. */
+    nextFrame()
+    {
+        return new Promise(resolve => window.requestAnimationFrame(() => window.setTimeout(resolve, 0)))
     }
 
     async init()
@@ -82,6 +88,7 @@ export class Game
         // Rapier ships as WASM, so it is imported dynamically and awaited
         this.RAPIER = await import('@dimforge/rapier3d')
         this.setLoadingStage('physics', 'Tuning the ride', 'Preparing the road physics and rider…')
+        await this.nextFrame()
 
         // Simulation
         this.physics = new Physics()
@@ -96,7 +103,17 @@ export class Game
         this.lighting = new Lighting()
         this.materials = new Materials()
         this.setLoadingStage('world', 'Building the city', 'Trees, river, waterfall and skyline are coming into view…')
+        await this.nextFrame()
         this.world = new World()
+        await this.nextFrame()
+
+        // Vegetation, wildlife, traffic and effects build one system at a time,
+        // yielding between them so the loader keeps moving.
+        await this.world.scrollWorld.buildLife((label, progress) =>
+        {
+            this.setLoadingStage('life', 'Bringing it to life', label, progress)
+            return this.nextFrame()
+        })
 
         // After the world, because the zones it reacts to are registered there
         this.projectCard = new ProjectCard()

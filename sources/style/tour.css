@@ -4168,3 +4168,183 @@ html.is-ready .cinematic-loader.is-loader-finished
         font-size: clamp(2.7rem, 11vw, 5.1rem);
     }
 }
+
+
+/* ---------------------------------------------------------------------------
+   Smooth loader: determinate progress, a Start gate and cinematic letterbox
+   bars while a roadside board is being read.
+--------------------------------------------------------------------------- */
+.loader-track span
+{
+    left: 0;
+    width: var(--loader-progress, 0%);
+    animation: none;
+    background: linear-gradient(90deg, #8ce8d4, #f8c18d);
+    transition: none;
+}
+
+.loader-track span::after
+{
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%);
+    background-size: 220% 100%;
+    animation: loader-shimmer 1.6s linear infinite;
+    content: "";
+}
+
+@keyframes loader-shimmer
+{
+    from { background-position: 120% 0; }
+    to { background-position: -120% 0; }
+}
+
+[data-loader-percent]
+{
+    font-variant-numeric: tabular-nums;
+    color: #f8c18d;
+}
+
+.loader-start
+{
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 15rem;
+    height: 3.1rem;
+    margin-top: 1.4rem;
+    overflow: hidden;
+    border: 1px solid rgba(248, 193, 141, 0.55);
+    border-radius: 2px;
+    background: linear-gradient(90deg, rgba(120, 92, 122, 0.85), rgba(190, 142, 170, 0.9) 50%, rgba(120, 92, 122, 0.85));
+    color: #fff7ec;
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 800;
+    letter-spacing: 0.42em;
+    text-indent: 0.42em;
+    cursor: pointer;
+    box-shadow: 0 0.9rem 2.4rem rgba(0, 0, 0, 0.28);
+    animation: loader-start-in 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    transition: transform 220ms ease, box-shadow 220ms ease, filter 220ms ease;
+}
+
+.loader-start[hidden],
+.loader-hint[hidden]
+{
+    display: none;
+}
+
+.loader-start i
+{
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 35%, rgba(255, 255, 255, 0.35) 50%, transparent 65%);
+    transform: translateX(-120%);
+    animation: loader-start-sheen 2.8s 900ms ease-in-out infinite;
+}
+
+.loader-start:hover,
+.loader-start:focus-visible
+{
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+    box-shadow: 0 1.2rem 2.8rem rgba(0, 0, 0, 0.34);
+    outline: 2px solid #8ce8d4;
+    outline-offset: 3px;
+}
+
+.loader-hint
+{
+    margin-top: 0.9rem;
+    max-width: 24rem;
+    color: rgba(248, 241, 229, 0.5);
+    font-size: 0.66rem;
+    line-height: 1.6;
+    letter-spacing: 0.04em;
+    animation: loader-start-in 700ms 150ms ease both;
+}
+
+@keyframes loader-start-in
+{
+    from { opacity: 0; transform: translateY(0.8rem); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes loader-start-sheen
+{
+    0%, 55% { transform: translateX(-120%); }
+    100% { transform: translateX(120%); }
+}
+
+html.is-awaiting-start,
+html.is-awaiting-start body
+{
+    overflow: hidden;
+}
+
+html.is-awaiting-start .loader-stage,
+html.is-awaiting-start .loader-note
+{
+    opacity: 0.85;
+}
+
+html.is-loading .cinematic-loader [data-loader-percent]
+{
+    opacity: 1;
+}
+
+/* Letterbox bars: framed, cinematic reading while a board holds the camera. */
+.cine-bar
+{
+    position: fixed;
+    z-index: 30;
+    right: 0;
+    left: 0;
+    height: 9.5vh;
+    background: linear-gradient(180deg, rgba(14, 20, 26, 0.94), rgba(14, 20, 26, 0.82));
+    pointer-events: none;
+    transition: transform 820ms cubic-bezier(0.65, 0, 0.2, 1);
+}
+
+.cine-bar--top
+{
+    top: 0;
+    transform: translateY(-101%);
+}
+
+.cine-bar--bottom
+{
+    bottom: 0;
+    transform: translateY(101%);
+}
+
+html.is-reading .cine-bar--top,
+html.is-reading .cine-bar--bottom
+{
+    transform: translateY(0);
+}
+
+html.is-hovering-board .canvas
+{
+    cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce)
+{
+    .cine-bar,
+    .loader-start,
+    .loader-start i,
+    .loader-track span::after
+    {
+        animation: none;
+        transition: none;
+    }
+}
+
+@media (max-width: 760px)
+{
+    .cine-bar { height: 6vh; }
+    .loader-start { min-width: 100%; }
+}

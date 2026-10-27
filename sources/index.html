@@ -38,13 +38,20 @@
             <h1 class="loader-headline">A little world.<br><em>A lot in motion.</em></h1>
             <p class="loader-intro">TANUSH CHAWLA <span>·</span> AI / ML / DATA / BACKEND</p>
             <div class="loader-stage" data-loader-title>Building your world</div>
-            <div class="loader-track"><span></span></div>
+            <div class="loader-track" role="progressbar" aria-label="Loading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-loader-bar><span></span></div>
             <p class="loader-note" data-loader-note>Preparing the road, the rider and the skyline…</p>
-            <div class="loader-footer"><span>GURUGRAM, INDIA</span><span>SCROLL TO RIDE <b>↓</b></span></div>
+            <button class="loader-start" type="button" data-loader-start hidden>
+                <span>START</span><i aria-hidden="true"></i>
+            </button>
+            <p class="loader-hint" data-loader-hint hidden>Scroll, swipe or use the arrow keys to ride · press any key to skip a reading pause</p>
+            <div class="loader-footer"><span>GURUGRAM, INDIA</span><span data-loader-percent>0%</span></div>
         </div>
         <div class="loader-corner loader-corner--top" aria-hidden="true">T / 01</div>
         <div class="loader-corner loader-corner--bottom" aria-hidden="true">MADE TO MOVE · 2026</div>
     </div>
+
+    <div class="cine-bar cine-bar--top" aria-hidden="true"></div>
+    <div class="cine-bar cine-bar--bottom" aria-hidden="true"></div>
 
     <aside class="card js-card legacy-project-card" aria-hidden="true">
         <div class="card-head"><span class="js-card-year"></span><span class="js-card-role"></span></div>

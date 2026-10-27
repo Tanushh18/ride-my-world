@@ -450,6 +450,14 @@ export class ScrollTour
             this.lastFov = fovNext
         }
 
+        // Cinematic letterbox bars frame the board while it holds the camera.
+        const reading = this.bannerPauseAt !== null && focusWeight > 0.6
+        if(reading !== this.reading)
+        {
+            this.reading = reading
+            document.documentElement.classList.toggle('is-reading', reading)
+        }
+
         if(this.progressBar)
             this.progressBar.style.transform = 'scaleX(' + this.progress + ')'
         document.documentElement.style.setProperty('--ride-progress', this.progress.toFixed(4))
@@ -467,5 +475,6 @@ export class ScrollTour
         if(this.scrollFrame)
             window.cancelAnimationFrame(this.scrollFrame)
         this.observer?.disconnect()
+        document.documentElement.classList.remove('is-reading')
     }
 }

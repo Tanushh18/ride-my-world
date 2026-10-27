@@ -11,20 +11,54 @@ root.classList.add('js')
 const loader = document.querySelector('#portfolio-loader')
 const loaderTitle = document.querySelector('[data-loader-title]')
 const loaderNote = document.querySelector('[data-loader-note]')
+const loaderPercent = document.querySelector('[data-loader-percent]')
+const loaderBar = document.querySelector('[data-loader-bar]')
+const loaderStart = document.querySelector('[data-loader-start]')
+const loaderHint = document.querySelector('[data-loader-hint]')
+root.classList.add('is-loading')
+
+// Progress is eased on screen so the bar glides between real loading steps
+// instead of jumping, and never moves backwards.
+const loaderState = { target: 4, shown: 0, frame: 0, last: performance.now() }
+const paintLoader = () =>
+{
+    loaderState.frame = 0
+    const now = performance.now()
+    const dt = Math.min(1, (now - loaderState.last) / 1000)
+    loaderState.last = now
+    // Time-based easing: smooth at 60fps, and still catches up after a long frame
+    loaderState.shown += (loaderState.target - loaderState.shown) * (1 - Math.exp(-dt * 7))
+    if(loaderState.target - loaderState.shown < 0.2)
+        loaderState.shown = loaderState.target
+    const value = Math.round(loaderState.shown)
+    if(loader)
+        loader.style.setProperty('--loader-progress', loaderState.shown.toFixed(2) + '%')
+    if(loaderPercent)
+        loaderPercent.textContent = value + '%'
+    loaderBar?.setAttribute('aria-valuenow', String(value))
+    if(loaderState.shown < loaderState.target)
+        loaderState.frame = window.requestAnimationFrame(paintLoader)
+}
+const setLoaderTarget = (value) =>
+{
+    loaderState.target = Math.max(loaderState.target, Math.min(100, value))
+    if(!loaderState.frame)
+        loaderState.frame = window.requestAnimationFrame(paintLoader)
+}
+
 document.addEventListener('portfolio:loading', (event) =>
 {
-    const { title, note, stage } = event.detail ?? {}
-    const loaderProgress = { boot: 8, renderer: 32, physics: 56, world: 80, ready: 100 }
+    const { title, note, stage, progress } = event.detail ?? {}
+    const stageProgress = { boot: 6, renderer: 22, physics: 38, world: 58, life: 70, ready: 100 }
     if(loaderTitle && title)
         loaderTitle.textContent = title
     if(loaderNote && note)
         loaderNote.textContent = note
     if(loader)
-    {
         loader.dataset.stage = stage ?? 'boot'
-        loader.style.setProperty('--loader-progress', (loaderProgress[stage] ?? 8) + '%')
-    }
+    setLoaderTarget(progress ?? stageProgress[stage] ?? 8)
 })
+paintLoader()
 
 const debugMode = window.location.hash.match(/debug/i)
 const game = new Game()
@@ -356,11 +390,37 @@ game.readyPromise.then(() =>
     // ScrollTour synchronizes the scooter, camera and lighting with one road curve.
     game.view.scrollTour = new ScrollTour(game)
     root.classList.add('is-tour-ready')
-    if(loader)
+    root.classList.remove('is-loading')
+
+    const dismissLoader = () =>
     {
-        loader.setAttribute('aria-hidden', 'true')
-        loader.classList.add('is-loader-finished')
+        root.classList.remove('is-awaiting-start')
+        if(loader)
+        {
+            loader.setAttribute('aria-hidden', 'true')
+            loader.classList.add('is-loader-finished')
+        }
     }
+
+    // Real visitors get a Start gate (a calm moment before the ride begins).
+    // Automated browsers skip it unless `#gate` is in the URL.
+    const skipGate = (navigator.webdriver && !/gate/i.test(window.location.hash)) || !loaderStart
+    if(skipGate)
+    {
+        dismissLoader()
+        return
+    }
+
+    root.classList.add('is-awaiting-start')
+    if(loaderTitle)
+        loaderTitle.textContent = 'The road is yours'
+    if(loaderNote)
+        loaderNote.textContent = 'Everything is loaded. Press start when you are ready.'
+    loaderStart.hidden = false
+    if(loaderHint)
+        loaderHint.hidden = false
+    loaderStart.focus({ preventScroll: true })
+    loaderStart.addEventListener('click', dismissLoader, { once: true })
 }).catch((error) =>
 {
     console.error(error)
