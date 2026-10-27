@@ -742,6 +742,9 @@ export class ScrollWorld
                 toneMapped: false
             })
         )
+        const signWidth = Math.min(building.width * 0.78, 7.6)
+        sign.geometry.dispose()
+        sign.geometry = new THREE.PlaneGeometry(signWidth, signWidth / 3.75)
         sign.position.set(0, 4.62, frontZ + (frontZ > 0 ? 0.12 : -0.12))
         sign.rotation.y = frontZ < 0 ? Math.PI : 0
         sign.renderOrder = 4
@@ -1456,10 +1459,14 @@ export class ScrollWorld
             }
         ]
 
+        const compact = window.innerWidth < 760
+        const boardWidth = compact ? 5.75 : 7.35
+        const boardHeight = compact ? 3.15 : 4.05
+        this.storyBoardOffset = compact ? 6.0 : 7.2
         const backingMaterial = this.material('#24484b', { roughness: 0.62, metalness: 0.24 })
         const legMaterial = this.material('#4b5b59', { roughness: 0.55, metalness: 0.36 })
-        const panelGeometry = new THREE.BoxGeometry(7.35, 4.05, 0.2)
-        const panelPlane = new THREE.PlaneGeometry(7.18, 3.88)
+        const panelGeometry = new THREE.BoxGeometry(boardWidth, boardHeight, 0.2)
+        const panelPlane = new THREE.PlaneGeometry(boardWidth - 0.17, boardHeight - 0.17)
         const postGeometry = new THREE.CylinderGeometry(0.065, 0.09, 1.7, 8)
 
         boards.forEach((item, index) =>
@@ -1467,8 +1474,8 @@ export class ScrollWorld
             const frame = this.routeFrame(item.t)
             const sign = new THREE.Group()
             sign.name = 'StoryBoard_' + String(index + 1).padStart(2, '0')
-            sign.position.copy(frame.position).addScaledVector(frame.side, item.side * 8.25)
-            sign.position.y = 3.48
+            sign.position.copy(frame.position).addScaledVector(frame.side, item.side * this.storyBoardOffset)
+            sign.position.y = compact ? 2.55 : 2.95
             sign.rotation.y = frame.yaw + (item.side > 0 ? Math.PI : 0)
 
             const backing = new THREE.Mesh(panelGeometry, backingMaterial)
@@ -1501,15 +1508,17 @@ export class ScrollWorld
             edge.position.z = 0.13
             sign.add(edge)
 
-            for(const x of [-2.65, 2.65])
+            const postX = boardWidth * 0.36
+            for(const x of [-postX, postX])
             {
                 const post = new THREE.Mesh(postGeometry, legMaterial)
-                post.position.set(x, -2.63, 0)
+                post.position.set(x, -(boardHeight / 2 + 0.1), 0)
                 post.castShadow = true
                 sign.add(post)
             }
 
-            for(const x of [-3.25, 3.25])
+            const capX = boardWidth * 0.44
+            for(const x of [-capX, capX])
             {
                 const cap = new THREE.Mesh(
                     new THREE.SphereGeometry(0.09, 8, 6),
