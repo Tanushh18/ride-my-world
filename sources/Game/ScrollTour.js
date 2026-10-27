@@ -291,12 +291,22 @@ export class ScrollTour
                             ? this.progress > stop.t && proposedProgress <= stop.t
                             : false)
                 : null
+            // Also catch the exact-target case (for example, navigation lands
+            // exactly on a banner's chapter progress and the easing would
+            // otherwise approach it asymptotically without crossing it).
+            const approachedBanner = !crossedBanner && !immediateUpdate && !reducedMotion
+                ? this.storyFocusStops.find(stop =>
+                    Math.abs(this.targetProgress - stop.t) < 0.0008
+                    && Math.abs(proposedProgress - stop.t) < 0.0018
+                    && Math.abs(this.progress - stop.t) > 0.0001)
+                : null
+            const dwellBanner = crossedBanner ?? approachedBanner
 
-            if(crossedBanner)
+            if(dwellBanner)
             {
-                this.progress = crossedBanner.t
-                this.bannerPauseAt = crossedBanner.t
-                this.bannerPauseUntil = now + 1150
+                this.progress = dwellBanner.t
+                this.bannerPauseAt = dwellBanner.t
+                this.bannerPauseUntil = now + 1450
                 this.bannerPauseCount++
             }
             else
@@ -387,9 +397,11 @@ export class ScrollTour
             this.cameraPosition.lerp(this.bannerCameraPosition, focusWeight)
         }
 
-        const cameraDamping = immediateUpdate ? 1 : 1 - Math.exp(-delta * 6.4)
+        const cameraEase = focusWeight > 0.72 ? 10.5 : 6.4
+        const targetEase = focusWeight > 0.72 ? 12.5 : 7.3
+        const cameraDamping = immediateUpdate ? 1 : 1 - Math.exp(-delta * cameraEase)
         camera.position.lerp(this.cameraPosition, cameraDamping)
-        this.lookTarget.lerp(this.cameraTarget, immediateUpdate ? 1 : 1 - Math.exp(-delta * 7.3))
+        this.lookTarget.lerp(this.cameraTarget, immediateUpdate ? 1 : 1 - Math.exp(-delta * targetEase))
         camera.lookAt(this.lookTarget)
 
         const sceneFov = mix(53, 49, finale) + waterfall * 3.5 + cityReveal * 1.2 + scenicReveal * 3.4
