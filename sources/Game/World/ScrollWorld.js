@@ -29,14 +29,19 @@ export class ScrollWorld
         this.roadCurve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.18)
         this.roadLength = this.roadCurve.getLength()
 
+        this.addLighting()
+        this.addMountains()
         this.addRoad()
         this.addRoadsideTrees()
         this.addRiverAndWaterfall()
         this.addBridge()
+        this.addSidewalks()
         this.addCity()
         this.addTramTracks()
+        this.addCrosswalks()
         this.addLearningHub()
         this.addAirport()
+        this.addSunDisk()
 
         // The existing renderer-owned ticker animates water. No second RAF loop.
         this.game.ticker.events.on('tick', () => { this.animateWater() }, 30)
@@ -72,6 +77,140 @@ export class ScrollWorld
         const side = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize()
         const yaw = Math.atan2(-tangent.z, tangent.x)
         return { position, tangent, side, yaw }
+    }
+
+
+    addLighting()
+    {
+        // Cool sky fill and a warm, non-shadow-casting rim light give the
+        // pastel façades depth without flattening the sun shadows.
+        const skyFill = new THREE.HemisphereLight('#ffd8d2', '#4c425e', 0.88)
+        this.group.add(skyFill)
+
+        const warmRim = new THREE.DirectionalLight('#f4b7a5', 0.48)
+        warmRim.position.set(-95, 72, 108)
+        warmRim.castShadow = false
+        this.group.add(warmRim)
+    }
+
+    addMountains()
+    {
+        // Faceted mountain silhouettes create distance layers behind the
+        // jungle/city horizon, fading naturally through the shared scene fog.
+        const materials = [
+            this.material('#524b67', { roughness: 1 }),
+            this.material('#716078', { roughness: 1 }),
+            this.material('#957186', { roughness: 1 })
+        ]
+        const peaks = [
+            [-192, 62, 22, 37, 30], [-175, 12, 28, 52, 35],
+            [-168, -48, 28, 33, 31], [-125, -112, 40, 29, 30],
+            [-32, 92, 35, 36, 28], [18, 106, 48, 30, 37],
+            [82, 86, 37, 39, 29], [156, 42, 34, 47, 34],
+            [182, -12, 42, 38, 30], [185, -82, 39, 49, 31],
+            [174, -164, 49, 32, 31], [75, -180, 48, 26, 34]
+        ]
+
+        peaks.forEach(([x, z, width, height, depth], index) =>
+        {
+            const mountain = new THREE.Mesh(
+                new THREE.IcosahedronGeometry(1, 1),
+                materials[index % materials.length]
+            )
+            mountain.position.set(x, height * 0.34, z)
+            mountain.scale.set(width, height, depth)
+            mountain.rotation.y = index * 0.41
+            mountain.castShadow = true
+            mountain.receiveShadow = true
+            this.group.add(mountain)
+        })
+    }
+
+    addSidewalks()
+    {
+        // Raised curb lines and continuous stone strips make the city feel like
+        // a built boulevard rather than a road placed over an empty plane.
+        const material = this.material('#c3a6a3', {
+            roughness: 0.97,
+            side: THREE.DoubleSide
+        })
+
+        for(const sideSign of [-1, 1])
+        {
+            const positions = []
+            const indices = []
+            const steps = 280
+
+            for(let i = 0; i <= steps; i++)
+            {
+                const t = 0.68 + (i / steps) * 0.32
+                const frame = this.routeFrame(t)
+                const inner = frame.position.clone().addScaledVector(frame.side, sideSign * 4.82).setY(0.14)
+                const outer = frame.position.clone().addScaledVector(frame.side, sideSign * 9.6).setY(0.14)
+
+                positions.push(inner.x, inner.y, inner.z, outer.x, outer.y, outer.z)
+                if(i < steps)
+                {
+                    const a = i * 2
+                    indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2)
+                }
+            }
+
+            const geometry = new THREE.BufferGeometry()
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+            geometry.setIndex(indices)
+            geometry.computeVertexNormals()
+
+            const sidewalk = new THREE.Mesh(geometry, material)
+            sidewalk.receiveShadow = true
+            this.group.add(sidewalk)
+        }
+    }
+
+    addCrosswalks()
+    {
+        const paint = new THREE.MeshBasicMaterial({
+            color: '#f5dec9',
+            transparent: true,
+            opacity: 0.82
+        })
+        const stripeGeometry = new THREE.BoxGeometry(0.46, 0.026, 8.05)
+
+        for(const t of [0.755, 0.835, 0.915, 0.975])
+        {
+            const frame = this.routeFrame(t)
+            for(let i = -4; i <= 4; i++)
+            {
+                const stripe = new THREE.Mesh(stripeGeometry, paint)
+                stripe.position.copy(frame.position)
+                    .addScaledVector(frame.tangent, i * 0.78)
+                stripe.position.y = 0.19
+                stripe.rotation.y = frame.yaw
+                this.group.add(stripe)
+            }
+        }
+    }
+
+    addSunDisk()
+    {
+        const sun = new THREE.Mesh(
+            new THREE.SphereGeometry(6.5, 24, 16),
+            new THREE.MeshBasicMaterial({ color: '#ffe1c4' })
+        )
+        sun.position.set(149, 43, -186)
+        this.group.add(sun)
+
+        const halo = new THREE.Mesh(
+            new THREE.SphereGeometry(10, 20, 12),
+            new THREE.MeshBasicMaterial({
+                color: '#efa4ac',
+                transparent: true,
+                opacity: 0.12,
+                depthWrite: false
+            })
+        )
+        halo.position.copy(sun.position)
+        this.group.add(halo)
     }
 
     addRoad()
