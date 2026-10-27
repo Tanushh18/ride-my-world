@@ -17,6 +17,9 @@ export class Playground
     {
         this.game = Game.getInstance()
         this.random = seededRandom(7)
+        this.group = new THREE.Group()
+        this.group.name = 'DebugPlayground'
+        this.game.scene.add(this.group)
 
         this.addRamp({ x: 18, z: 0 }, 0)
         this.addRamp({ x: -18, z: 12 }, Math.PI)
@@ -45,7 +48,7 @@ export class Playground
         const group = new THREE.Group()
         group.position.set(position.x, 0, position.z)
         group.quaternion.copy(quaternion)
-        this.game.scene.add(group)
+        this.group.add(group)
 
         const mesh = new THREE.Mesh(wedge.geometry, this.game.materials.get('wood'))
         mesh.castShadow = true
@@ -84,7 +87,7 @@ export class Playground
                 const mesh = new THREE.Mesh(geometry, this.game.materials.get('wood'))
                 mesh.castShadow = true
                 mesh.receiveShadow = true
-                this.game.scene.add(mesh)
+                this.group.add(mesh)
 
                 this.game.objects.add(mesh, {
                     type: 'dynamic',
@@ -127,7 +130,7 @@ export class Playground
         band.castShadow = true
 
         group.add(body, band)
-        this.game.scene.add(group)
+        this.group.add(group)
 
         this.game.objects.add(group, {
             type: 'dynamic',
