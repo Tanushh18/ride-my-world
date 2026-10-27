@@ -1469,7 +1469,7 @@ export class ScrollWorld
             sign.name = 'StoryBoard_' + String(index + 1).padStart(2, '0')
             sign.position.copy(frame.position).addScaledVector(frame.side, item.side * 8.25)
             sign.position.y = 3.48
-            sign.rotation.y = frame.yaw - Math.PI / 2
+            sign.rotation.y = frame.yaw + (item.side > 0 ? Math.PI : 0)
 
             const backing = new THREE.Mesh(panelGeometry, backingMaterial)
             backing.castShadow = true
