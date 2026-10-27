@@ -171,6 +171,11 @@ export class VisualVehicle
 
     update()
     {
+        // The portfolio ride is synchronized by ScrollTour along the road curve.
+        // Do not overwrite its scooter pose with the parked physics chassis.
+        if(this.game.view.scrollTour?.active)
+            return
+
         const vehicle = this.game.physicsVehicle
 
         this.group.position.copy(vehicle.position)
