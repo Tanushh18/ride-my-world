@@ -1145,7 +1145,7 @@ export class ScrollWorld
 
         const texture = new THREE.CanvasTexture(canvas)
         texture.colorSpace = THREE.SRGBColorSpace
-        texture.anisotropy = Math.min(8, this.game.rendering.renderer.capabilities.getMaxAnisotropy())
+        texture.anisotropy = Math.min(8, this.game.rendering.renderer.capabilities?.getMaxAnisotropy?.() ?? 1)
         texture.needsUpdate = true
         return texture
     }
