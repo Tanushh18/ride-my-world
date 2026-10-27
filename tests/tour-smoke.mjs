@@ -127,6 +127,9 @@ try
         null,
         { timeout: 30000 }
     )
+    // Let the damped camera finish its final face-on rotation while the
+    // intentional banner dwell is still active.
+    await page.waitForTimeout(300)
 
     const midRide = await page.evaluate(() =>
     {
