@@ -29,6 +29,8 @@ export class ScrollWorld
         this.motePhase = new Float32Array(0)
         this.storyBoards = []
         this.facadeLabels = []
+        this.aircraft = null
+        this.airportPamphlet = null
         this.paperNote = null
 
         this.roadPoints = [
@@ -60,6 +62,7 @@ export class ScrollWorld
         this.addAmbientParticles()
         this.addStoryBoards()
         this.addFlyingNote()
+        this.addAirportPamphlet()
 
         // Reuse the renderer-owned ticker for water, particles and light motion.
         this.game.ticker.events.on('tick', () =>
@@ -996,6 +999,175 @@ export class ScrollWorld
             }
         })
         this.group.add(terminal)
+        this.addParkedAircraft(end)
+    }
+
+    addParkedAircraft(end)
+    {
+        // A compact, low-poly aircraft makes the terminal feel active and gives
+        // the later paper moment a real in-world source.
+        const aircraft = new THREE.Group()
+        aircraft.name = 'ParkedPortfolioAircraft'
+        aircraft.position.copy(end.position)
+            .addScaledVector(end.tangent, 29)
+            .addScaledVector(end.side, -0.5)
+        aircraft.position.y = 1.48
+        aircraft.rotation.y = end.yaw
+
+        const fuselageMaterial = this.material('#f3e8d4', { roughness: 0.48, metalness: 0.12 })
+        const wingMaterial = this.material('#9dcfc8', { roughness: 0.42, metalness: 0.14 })
+        const underwingMaterial = this.material('#c4b5a6', { roughness: 0.6, metalness: 0.08 })
+        const windowMaterial = new THREE.MeshBasicMaterial({ color: '#31565a' })
+        const wheelMaterial = this.material('#4a5156', { roughness: 0.78, metalness: 0.18 })
+
+        const fuselage = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.5, 12.2, 14), fuselageMaterial)
+        fuselage.rotation.z = -Math.PI / 2
+        fuselage.position.y = 0.03
+        fuselage.castShadow = true
+        aircraft.add(fuselage)
+
+        const nose = new THREE.Mesh(new THREE.SphereGeometry(0.41, 12, 8), fuselageMaterial)
+        nose.position.set(6.0, 0.06, 0)
+        nose.scale.set(1.1, 0.86, 0.86)
+        aircraft.add(nose)
+
+        const wings = new THREE.Mesh(new THREE.BoxGeometry(2.25, 0.15, 11.2), wingMaterial)
+        wings.position.set(-0.35, -0.12, 0)
+        wings.castShadow = true
+        wings.receiveShadow = true
+        aircraft.add(wings)
+
+        const tailWing = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.11, 4.0), wingMaterial)
+        tailWing.position.set(-4.95, 0.27, 0)
+        aircraft.add(tailWing)
+
+        const tailFin = new THREE.Mesh(new THREE.BoxGeometry(1.35, 1.55, 0.15), wingMaterial)
+        tailFin.position.set(-4.95, 0.82, 0)
+        tailFin.rotation.z = -0.12
+        tailFin.castShadow = true
+        aircraft.add(tailFin)
+
+        for(const sideSign of [-1, 1])
+        {
+            const engine = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.32, 2.0, 10), underwingMaterial)
+            engine.rotation.z = -Math.PI / 2
+            engine.position.set(0.25, -0.37, sideSign * 2.25)
+            engine.castShadow = true
+            aircraft.add(engine)
+
+            const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 0.85, 7), wheelMaterial)
+            strut.position.set(-1.55, -0.82, sideSign * 2.0)
+            aircraft.add(strut)
+
+            const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.14, 10), wheelMaterial)
+            wheel.rotation.x = Math.PI / 2
+            wheel.position.set(-1.55, -1.22, sideSign * 2.0)
+            aircraft.add(wheel)
+        }
+
+        for(let index = 0; index < 9; index++)
+        {
+            const window = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.15, 0.035), windowMaterial)
+            window.position.set(-3.4 + index * 0.82, 0.12, 0.455)
+            aircraft.add(window)
+        }
+
+        aircraft.traverse(node =>
+        {
+            if(node.isMesh)
+            {
+                node.castShadow = true
+                node.receiveShadow = true
+            }
+        })
+        this.group.add(aircraft)
+        this.aircraft = aircraft
+        this.aircraftSource = aircraft.position.clone()
+            .addScaledVector(end.tangent, 4.2)
+            .addScaledVector(end.side, 0.7)
+        this.aircraftSource.y += 2.55
+        this.aircraftYaw = end.yaw
+    }
+
+    addAirportPamphlet()
+    {
+        // The airport leaflet is deliberately typographic and short enough to
+        // read as it drifts from the aircraft toward the end of the route.
+        const canvas = document.createElement('canvas')
+        canvas.width = 1000
+        canvas.height = 700
+        const ctx = canvas.getContext('2d')
+        if(!ctx)
+            return
+
+        ctx.fillStyle = '#fff5e4'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        ctx.strokeStyle = 'rgba(49, 86, 90, 0.28)'
+        ctx.lineWidth = 3
+        ctx.strokeRect(20, 20, 960, 660)
+        ctx.fillStyle = '#31565a'
+        ctx.font = '700 25px Arial, sans-serif'
+        ctx.fillText('AIRMAIL  /  THE NEXT DESTINATION', 62, 78)
+        ctx.fillStyle = '#c57b59'
+        ctx.fillRect(62, 108, 124, 8)
+        ctx.fillStyle = '#18383d'
+        ctx.font = '700 59px Arial, sans-serif'
+        ctx.fillText('Let’s build', 62, 220)
+        ctx.fillText('something useful.', 62, 292)
+        ctx.fillStyle = '#3e5555'
+        ctx.font = '500 31px Arial, sans-serif'
+        ctx.fillText('AI / ML  ·  Data  ·  Backend', 62, 382)
+        ctx.fillText('Projects, ideas and a little curiosity.', 62, 430)
+        ctx.strokeStyle = 'rgba(49, 86, 90, 0.22)'
+        ctx.beginPath()
+        ctx.moveTo(62, 495)
+        ctx.lineTo(935, 495)
+        ctx.stroke()
+        ctx.fillStyle = '#42676a'
+        ctx.font = '700 24px Arial, sans-serif'
+        ctx.fillText('TANUSH CHAWLA', 62, 550)
+        ctx.font = '600 23px Arial, sans-serif'
+        ctx.fillText('tanushchawla16@gmail.com', 62, 604)
+        ctx.textAlign = 'right'
+        ctx.fillStyle = '#b46d54'
+        ctx.font = '700 18px Arial, sans-serif'
+        ctx.fillText('GURUGRAM  /  INDIA', 935, 647)
+
+        const texture = new THREE.CanvasTexture(canvas)
+        texture.colorSpace = THREE.SRGBColorSpace
+        texture.anisotropy = Math.min(8, this.game.rendering.renderer.capabilities?.getMaxAnisotropy?.() ?? 1)
+
+        const group = new THREE.Group()
+        group.name = 'AirportWindblownPamphlet'
+        const material = new THREE.MeshBasicMaterial({
+            map: texture,
+            transparent: true,
+            opacity: 0,
+            side: THREE.DoubleSide,
+            toneMapped: false,
+            depthWrite: false
+        })
+        const sheet = new THREE.Mesh(new THREE.PlaneGeometry(2.85, 2.0), material)
+        sheet.renderOrder = 8
+        sheet.frustumCulled = false
+        group.add(sheet)
+
+        const shadow = new THREE.Mesh(
+            new THREE.PlaneGeometry(3.0, 2.12),
+            new THREE.MeshBasicMaterial({
+                color: '#cfad86', transparent: true, opacity: 0,
+                side: THREE.DoubleSide, depthWrite: false
+            })
+        )
+        shadow.position.z = -0.04
+        shadow.renderOrder = 7
+        group.add(shadow)
+        group.visible = false
+        this.group.add(group)
+        this.airportPamphlet = {
+            group, material, shadowMaterial: shadow.material,
+            texture, origin: this.aircraftSource?.clone() ?? new THREE.Vector3()
+        }
     }
 
 
@@ -1467,6 +1639,31 @@ export class ScrollWorld
         )
         const scale = 0.94 + (reducedMotion ? 0 : Math.sin(time * 1.6) * 0.035)
         this.paperNote.group.scale.setScalar(scale)
+
+        if(this.airportPamphlet && this.aircraftSource)
+        {
+            const airportFadeIn = smoothstep(0.885, 0.92, progress)
+            const airportFadeOut = 1 - smoothstep(0.972, 0.997, progress)
+            const airportVisible = airportFadeIn * airportFadeOut
+            const flight = smoothstep(0.90, 0.975, progress)
+            const targetT = THREE.MathUtils.clamp(progress + 0.014, 0.01, 0.99)
+            const targetFrame = this.routeFrame(targetT)
+            const target = targetFrame.position.clone()
+                .addScaledVector(targetFrame.tangent, 1.1)
+                .addScaledVector(targetFrame.side, 1.9)
+            target.y = targetFrame.position.y + 2.05 + (reducedMotion ? 0 : Math.sin(time * 1.9) * 0.18)
+
+            this.airportPamphlet.material.opacity = airportVisible * 0.98
+            this.airportPamphlet.shadowMaterial.opacity = airportVisible * 0.12
+            this.airportPamphlet.group.visible = airportVisible > 0.005
+            this.airportPamphlet.group.position.copy(this.airportPamphlet.origin).lerp(target, flight)
+            this.airportPamphlet.group.rotation.set(
+                reducedMotion ? 0 : Math.sin(time * 0.9) * 0.1,
+                this.aircraftYaw - Math.PI / 2 + (targetFrame.yaw - this.aircraftYaw) * flight,
+                reducedMotion ? 0 : Math.sin(time * 1.35) * 0.16
+            )
+            this.airportPamphlet.group.scale.setScalar(1.12 - flight * 0.14)
+        }
     }
 
     animateWater()
