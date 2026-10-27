@@ -115,9 +115,10 @@ try
         const education = document.getElementById('education')
         const start = projects.getBoundingClientRect().top + window.scrollY
         const end = education.getBoundingClientRect().top + window.scrollY
-        // Aim at the midpoint between Projects and Education. ScrollTour maps
-        // that exact interval to the 0.70 sign-focus beat.
-        window.scrollTo(0, start + (end - start) * 0.5)
+        // Aim just beyond the midpoint between Projects and Education.
+        // That crosses the 0.70 in-world sign target, allowing the reading
+        // dwell to trigger instead of asymptotically approaching it.
+        window.scrollTo(0, start + (end - start) * 0.55)
     })
 
     await page.waitForFunction(() =>
