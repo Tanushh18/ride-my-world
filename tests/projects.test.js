@@ -32,9 +32,9 @@ describe('world data', () =>
 
 describe('projects data', () =>
 {
-    it('ships four projects', () =>
+    it('ships six featured portfolio projects', () =>
     {
-        expect(projects).toHaveLength(4)
+        expect(projects).toHaveLength(6)
     })
 
     it('gives every project a unique id', () =>
