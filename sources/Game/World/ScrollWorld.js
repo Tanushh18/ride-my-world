@@ -1,5 +1,12 @@
 import * as THREE from 'three/webgpu'
 import { color as tslColor, mix as tslMix, uniform as tslUniform } from 'three/tsl'
+import portfolio from '../../data/portfolio.js'
+
+const smoothstep = (edge0, edge1, value) =>
+{
+    const t = THREE.MathUtils.clamp((value - edge0) / (edge1 - edge0), 0, 1)
+    return t * t * (3 - 2 * t)
+}
 
 /**
  * One connected, original low-poly world for the scooter journey.
@@ -20,6 +27,8 @@ export class ScrollWorld
         this.moteGeometry = null
         this.moteBaseY = new Float32Array(0)
         this.motePhase = new Float32Array(0)
+        this.storyBoards = []
+        this.paperNote = null
 
         this.roadPoints = [
             [-130, 55], [-118, 42], [-106, 24], [-100, 4],
@@ -48,12 +57,15 @@ export class ScrollWorld
         this.addSunDisk()
         this.addLightTrails()
         this.addAmbientParticles()
+        this.addStoryBoards()
+        this.addFlyingNote()
 
         // Reuse the renderer-owned ticker for water, particles and light motion.
         this.game.ticker.events.on('tick', () =>
         {
             this.animateWater()
             this.animateEffects()
+            this.animateStorytelling()
         }, 30)
     }
 
@@ -1060,6 +1072,327 @@ export class ScrollWorld
                 positions.array[index * 3 + 1] = this.moteBaseY[index] + Math.sin(time * 0.8 + this.motePhase[index]) * 0.24
             positions.needsUpdate = true
         }
+    }
+
+    createStoryTexture(item, index, count)
+    {
+        const canvas = document.createElement('canvas')
+        canvas.width = 1400
+        canvas.height = 800
+        const ctx = canvas.getContext('2d')
+        if(!ctx)
+            return null
+
+        const wash = ctx.createLinearGradient(0, 0, 1400, 800)
+        wash.addColorStop(0, '#fff9ec')
+        wash.addColorStop(1, '#e9d7bd')
+        ctx.fillStyle = wash
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+        ctx.fillStyle = 'rgba(49, 79, 79, 0.035)'
+        for(let x = 24; x < canvas.width; x += 34)
+            for(let y = 20; y < canvas.height; y += 34)
+                ctx.fillRect(x, y, 1.5, 1.5)
+
+        ctx.fillStyle = '#31565a'
+        ctx.fillRect(0, 0, 12, canvas.height)
+        ctx.font = '700 24px Arial, sans-serif'
+        ctx.fillStyle = '#42676a'
+        ctx.fillText('T.  /  TANUSH CHAWLA', 58, 66)
+        ctx.textAlign = 'right'
+        ctx.fillStyle = '#846c5e'
+        ctx.font = '600 18px Arial, sans-serif'
+        ctx.fillText(item.kicker.toUpperCase(), 1335, 66)
+        ctx.textAlign = 'left'
+
+        ctx.strokeStyle = 'rgba(49, 86, 90, 0.24)'
+        ctx.lineWidth = 2
+        ctx.beginPath()
+        ctx.moveTo(58, 100)
+        ctx.lineTo(1340, 100)
+        ctx.stroke()
+
+        let titleSize = 76
+        ctx.font = '700 ' + titleSize + 'px Arial, sans-serif'
+        while(ctx.measureText(item.title).width > 1280 && titleSize > 46)
+        {
+            titleSize -= 2
+            ctx.font = '700 ' + titleSize + 'px Arial, sans-serif'
+        }
+        ctx.fillStyle = '#18383d'
+        ctx.fillText(item.title, 58, 218)
+
+        ctx.fillStyle = item.accent ?? '#c27b5b'
+        ctx.fillRect(58, 258, 86, 8)
+
+        ctx.fillStyle = '#3e5555'
+        ctx.font = '500 34px Arial, sans-serif'
+        let bodyY = 340
+        for(const line of item.lines.slice(0, 2))
+        {
+            ctx.fillText(line, 58, bodyY, 1260)
+            bodyY += 58
+        }
+
+        ctx.fillStyle = '#42676a'
+        ctx.font = '700 21px Arial, sans-serif'
+        ctx.fillText(item.footer.toUpperCase(), 58, 710)
+
+        ctx.textAlign = 'right'
+        ctx.fillStyle = '#b46d54'
+        ctx.font = '700 24px Arial, sans-serif'
+        ctx.fillText(String(index + 1).padStart(2, '0') + ' / ' + String(count).padStart(2, '0'), 1338, 710)
+
+        const texture = new THREE.CanvasTexture(canvas)
+        texture.colorSpace = THREE.SRGBColorSpace
+        texture.anisotropy = Math.min(8, this.game.rendering.renderer.capabilities.getMaxAnisotropy())
+        texture.needsUpdate = true
+        return texture
+    }
+
+    addStoryBoards()
+    {
+        // Physical roadside signs bring compact chapter summaries into view.
+        const boards = [
+            {
+                t: 0.025, side: -1, kicker: '01 / THE BEGINNING',
+                title: portfolio.name.toUpperCase(),
+                lines: [portfolio.roleLine.replaceAll(' · ', '  /  '), portfolio.location + '  ·  Scroll to ride through my work'],
+                footer: 'BUILD  /  ANALYSE  /  SHIP', accent: '#cc805e'
+            },
+            {
+                t: 0.13, side: 1, kicker: '02 / THE PERSON BEHIND THE BUILD',
+                title: 'AI. DATA. SYSTEMS.',
+                lines: ['Machine learning, analytics and backend engineering.', portfolio.about.note],
+                footer: 'CURIOSITY → USEFUL SOFTWARE', accent: '#3a9a8a'
+            },
+            {
+                t: 0.275, side: -1, kicker: '03 / TOOLS OF THE TRADE',
+                title: 'THE TOOLKIT',
+                lines: ['Python · SQL · C++ · JavaScript · ML · RAG', 'APIs · Power BI · Azure · Docker · Databases'],
+                footer: 'PRACTICAL TOOLS, REAL SYSTEMS', accent: '#3a9a8a'
+            },
+            {
+                t: 0.48, side: 1, kicker: '04 / FROM LEARNING TO SHIPPING',
+                title: 'WORK IN MOTION',
+                lines: ['Backend Developer  ·  July 2026 — Present', 'Konverge Technologies  ·  Bluestock Fintech'],
+                footer: 'APIS  /  DATA  /  PRACTICAL ML', accent: '#cc805e'
+            },
+            {
+                t: 0.70, side: -1, kicker: '05 / SELECTED BUILDS',
+                title: 'BUILT & SHIPPED',
+                lines: ['GGN Home · NIDS · RAG Research Agent', 'Stashr · WeCode · DealRadar'],
+                footer: 'IDEAS THAT LEAVE THE NOTEBOOK', accent: '#3a9a8a'
+            },
+            {
+                t: 0.82, side: 1, kicker: '06 / THE LEARNING ROUTE',
+                title: 'THE FOUNDATION',
+                lines: ['B.Tech · Computer Science Engineering', 'AI & ML  ·  VIT Bhopal  ·  CGPA 8.59 / 10'],
+                footer: '90% IN CBSE CLASS X AND XII', accent: '#cc805e'
+            },
+            {
+                t: 0.89, side: -1, kicker: '07 / CERTIFIED LEARNING',
+                title: 'CLOUD. AI. PRACTICE.',
+                lines: ['Microsoft Azure AI-102 · AI-900 · AZ-900', 'Google IT Support Professional Certificate'],
+                footer: 'LEARN IT  /  BUILD WITH IT', accent: '#3a9a8a'
+            },
+            {
+                t: 0.955, side: 1, kicker: '08 / PROGRESS YOU CAN POINT TO',
+                title: 'CONSISTENCY COMPOUNDS.',
+                lines: ['500+ DSA problems solved  ·  4 certifications', '8.59 CGPA  ·  90% CBSE  ·  GGN Home live'],
+                footer: 'SMALL WINS, SHIPPED OFTEN', accent: '#cc805e'
+            },
+            {
+                t: 0.99, side: -1, kicker: '09 / THE NEXT DESTINATION',
+                title: 'LET’S BUILD WHAT’S NEXT.',
+                lines: [portfolio.contact.email, portfolio.contact.location + '  ·  ' + portfolio.links.github.replace('https://', '')],
+                footer: 'SAY HELLO  /  BUILD SOMETHING USEFUL', accent: '#3a9a8a'
+            }
+        ]
+
+        const backingMaterial = this.material('#24484b', { roughness: 0.62, metalness: 0.24 })
+        const legMaterial = this.material('#4b5b59', { roughness: 0.55, metalness: 0.36 })
+        const panelGeometry = new THREE.BoxGeometry(7.35, 4.05, 0.2)
+        const panelPlane = new THREE.PlaneGeometry(7.18, 3.88)
+        const postGeometry = new THREE.CylinderGeometry(0.065, 0.09, 1.7, 8)
+
+        boards.forEach((item, index) =>
+        {
+            const frame = this.routeFrame(item.t)
+            const sign = new THREE.Group()
+            sign.name = 'StoryBoard_' + String(index + 1).padStart(2, '0')
+            sign.position.copy(frame.position).addScaledVector(frame.side, item.side * 11.1)
+            sign.position.y = 3.48
+            sign.rotation.y = frame.yaw + (item.side > 0 ? Math.PI : 0)
+
+            const backing = new THREE.Mesh(panelGeometry, backingMaterial)
+            backing.castShadow = true
+            backing.receiveShadow = true
+            sign.add(backing)
+
+            const texture = this.createStoryTexture(item, index, boards.length)
+            if(texture)
+            {
+                const face = new THREE.Mesh(panelPlane, new THREE.MeshBasicMaterial({
+                    map: texture,
+                    color: '#ffffff',
+                    side: THREE.DoubleSide,
+                    toneMapped: false
+                }))
+                face.position.z = 0.112
+                face.renderOrder = 5
+                sign.add(face)
+            }
+
+            const edge = new THREE.LineSegments(
+                new THREE.EdgesGeometry(new THREE.BoxGeometry(7.42, 4.12, 0.24)),
+                new THREE.LineBasicMaterial({
+                    color: item.accent ?? '#d8b28b',
+                    transparent: true,
+                    opacity: 0.74
+                })
+            )
+            edge.position.z = 0.13
+            sign.add(edge)
+
+            for(const x of [-2.65, 2.65])
+            {
+                const post = new THREE.Mesh(postGeometry, legMaterial)
+                post.position.set(x, -2.63, 0)
+                post.castShadow = true
+                sign.add(post)
+            }
+
+            for(const x of [-3.25, 3.25])
+            {
+                const cap = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.09, 8, 6),
+                    new THREE.MeshBasicMaterial({ color: item.accent ?? '#f2b879' })
+                )
+                cap.position.set(x, 2.02, 0.02)
+                sign.add(cap)
+            }
+
+            this.storyBoards.push({ group: sign, edge, texture, basePulse: index * 0.64 })
+            this.group.add(sign)
+        })
+    }
+
+    addFlyingNote()
+    {
+        // A single paper note catches the wind beside the rider, rather than
+        // appearing as another fixed UI card.
+        const canvas = document.createElement('canvas')
+        canvas.width = 1100
+        canvas.height = 780
+        const ctx = canvas.getContext('2d')
+        if(!ctx)
+            return
+
+        ctx.fillStyle = '#f8f0dc'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        ctx.strokeStyle = 'rgba(49, 86, 90, 0.26)'
+        ctx.lineWidth = 3
+        ctx.strokeRect(22, 22, 1056, 736)
+        ctx.fillStyle = '#31565a'
+        ctx.font = '700 25px Arial, sans-serif'
+        ctx.fillText('A FIELD NOTE FROM THE RIDE', 66, 82)
+        ctx.fillStyle = '#c57b59'
+        ctx.fillRect(66, 110, 120, 8)
+        ctx.fillStyle = '#18383d'
+        ctx.font = '700 59px Arial, sans-serif'
+        ctx.fillText('Ideas should', 66, 226)
+        ctx.fillText('leave the notebook.', 66, 300)
+        ctx.fillStyle = '#3e5555'
+        ctx.font = '500 32px Arial, sans-serif'
+        ctx.fillText('Models, APIs and data matter most', 66, 390)
+        ctx.fillText('when they solve a real problem.', 66, 438)
+        ctx.strokeStyle = 'rgba(49, 86, 90, 0.22)'
+        ctx.beginPath()
+        ctx.moveTo(66, 500)
+        ctx.lineTo(1035, 500)
+        ctx.stroke()
+        ctx.fillStyle = '#42676a'
+        ctx.font = '700 25px Arial, sans-serif'
+        ctx.fillText('— TANUSH CHAWLA', 66, 565)
+        ctx.textAlign = 'right'
+        ctx.fillStyle = '#b46d54'
+        ctx.font = '700 22px Arial, sans-serif'
+        ctx.fillText('AI / DATA / BACKEND', 1035, 700)
+
+        const texture = new THREE.CanvasTexture(canvas)
+        texture.colorSpace = THREE.SRGBColorSpace
+        texture.anisotropy = Math.min(8, this.game.rendering.renderer.capabilities.getMaxAnisotropy())
+
+        const group = new THREE.Group()
+        group.name = 'WindBlownPortfolioNote'
+        const noteMaterial = new THREE.MeshBasicMaterial({
+            map: texture,
+            transparent: true,
+            opacity: 0,
+            side: THREE.DoubleSide,
+            toneMapped: false,
+            depthWrite: false
+        })
+        const sheet = new THREE.Mesh(new THREE.PlaneGeometry(3.35, 2.38), noteMaterial)
+        sheet.renderOrder = 7
+        sheet.frustumCulled = false
+        group.add(sheet)
+
+        const shadow = new THREE.Mesh(
+            new THREE.PlaneGeometry(3.52, 2.5),
+            new THREE.MeshBasicMaterial({
+                color: '#d8b58e',
+                transparent: true,
+                opacity: 0,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            })
+        )
+        shadow.position.z = -0.035
+        shadow.renderOrder = 6
+        group.add(shadow)
+
+        this.group.add(group)
+        this.paperNote = { group, material: noteMaterial, shadowMaterial: shadow.material, texture }
+    }
+
+    animateStorytelling()
+    {
+        const tour = this.game.view?.scrollTour
+        const progress = tour?.progress ?? 0
+        const time = this.game.ticker.elapsed
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+        for(const board of this.storyBoards)
+        {
+            board.edge.material.opacity = 0.58 + 0.18 * (0.5 + 0.5 * Math.sin((reducedMotion ? 0 : time) * 1.3 + board.basePulse))
+        }
+
+        if(!this.paperNote || !tour)
+            return
+
+        const fadeIn = smoothstep(0.32, 0.37, progress)
+        const fadeOut = 1 - smoothstep(0.51, 0.57, progress)
+        const visible = fadeIn * fadeOut
+        this.paperNote.material.opacity = visible * 0.96
+        this.paperNote.shadowMaterial.opacity = visible * 0.13
+        this.paperNote.group.visible = visible > 0.005
+
+        const t = THREE.MathUtils.clamp(progress + 0.035, 0.01, 0.99)
+        const frame = this.routeFrame(t)
+        const wind = reducedMotion ? 0 : time
+        this.paperNote.group.position.copy(frame.position)
+            .addScaledVector(frame.tangent, 2.5 + Math.sin(wind * 1.05) * 0.9)
+            .addScaledVector(frame.side, Math.sin(wind * 0.82) * 2.6 - 3.2)
+        this.paperNote.group.position.y = frame.position.y + 2.85 + (reducedMotion ? 0 : Math.sin(time * 1.7) * 0.27)
+        this.paperNote.group.rotation.set(
+            reducedMotion ? 0 : Math.sin(time * 0.7) * 0.08,
+            frame.yaw - Math.PI / 2,
+            reducedMotion ? 0 : Math.sin(time * 1.15) * 0.14
+        )
+        const scale = 0.94 + (reducedMotion ? 0 : Math.sin(time * 1.6) * 0.035)
+        this.paperNote.group.scale.setScalar(scale)
     }
 
     animateWater()
