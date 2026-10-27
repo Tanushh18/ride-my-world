@@ -117,7 +117,10 @@ try
             progress: game.view.scrollTour.progress,
             rider: game.world.visualVehicle.group.position.toArray(),
             camera: game.view.camera.position.toArray(),
-            wheel: game.world.visualVehicle.wheels[0].spinner.rotation.z
+            wheel: game.world.visualVehicle.wheels[0].spinner.rotation.z,
+            storyFocusWeight: game.view.scrollTour.storyFocusWeight,
+            storyFocusStop: game.view.scrollTour.storyFocusStop,
+            focusStops: game.view.scrollTour.storyFocusStops.length
         }
     })
 
@@ -137,6 +140,10 @@ try
         throw new Error('Chase camera did not follow the scroll journey; moved ' + cameraChange.toFixed(2))
     if(Math.abs(midRide.wheel - initial.wheel) < 10)
         throw new Error('Scooter wheel animation is not connected to scroll progress')
+    if(midRide.focusStops !== 9)
+        throw new Error('Camera story focus keyframes missing; got ' + midRide.focusStops)
+    if(midRide.storyFocusWeight < 0.35)
+        throw new Error('Camera did not reframe for readable in-world storytelling; focus=' + midRide.storyFocusWeight)
 
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight - window.innerHeight))
     await page.waitForFunction(() => window.game.view.scrollTour.progress > 0.96, null, { timeout: 30000 })
@@ -175,6 +182,7 @@ try
             riderTravelled: Number(positionChange.toFixed(2)),
             cameraTravelled: Number(cameraChange.toFixed(2)),
             wheelsAnimated: Math.abs(midRide.wheel - initial.wheel) > 10,
+            signFocus: { weight: Number(midRide.storyFocusWeight.toFixed(3)), stop: midRide.storyFocusStop },
             endProgress: Number(endRide.progress.toFixed(3))
         },
         triangles: initial.triangles,
