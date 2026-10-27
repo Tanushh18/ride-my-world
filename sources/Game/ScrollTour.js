@@ -214,7 +214,7 @@ export class ScrollTour
         const delta = Math.min(this.game.ticker.delta || 1 / 60, 1 / 30)
         const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
         const immediateUpdate = immediate || reducedMotion
-        const progressDamping = 1 - Math.exp(-delta * (reducedMotion ? 18 : 3.8))
+        const progressDamping = 1 - Math.exp(-delta * (reducedMotion ? 18 : 5.2))
 
         this.progress = immediateUpdate
             ? this.targetProgress
@@ -251,9 +251,9 @@ export class ScrollTour
         this.cameraPosition.addScaledVector(this.side, this.pointer.x * 0.42)
         this.cameraPosition.y -= this.pointer.y * 0.16
 
-        const cameraDamping = immediateUpdate ? 1 : 1 - Math.exp(-delta * 4.4)
+        const cameraDamping = immediateUpdate ? 1 : 1 - Math.exp(-delta * 5.3)
         camera.position.lerp(this.cameraPosition, cameraDamping)
-        this.lookTarget.lerp(this.cameraTarget, immediateUpdate ? 1 : 1 - Math.exp(-delta * 5.2))
+        this.lookTarget.lerp(this.cameraTarget, immediateUpdate ? 1 : 1 - Math.exp(-delta * 6.1))
         camera.lookAt(this.lookTarget)
 
         const nextFov = mix(53, 49, finale) + waterfall * 3.5 + cityReveal * 1.2
@@ -265,8 +265,8 @@ export class ScrollTour
         }
 
         if(this.progressBar)
-            this.progressBar.style.transform = 'scaleX(' + this.targetProgress + ')'
-        document.documentElement.style.setProperty('--ride-progress', this.targetProgress.toFixed(4))
+            this.progressBar.style.transform = 'scaleX(' + this.progress + ')'
+        document.documentElement.style.setProperty('--ride-progress', this.progress.toFixed(4))
     }
 
     destroy()
