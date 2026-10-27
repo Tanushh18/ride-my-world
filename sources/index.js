@@ -107,6 +107,11 @@ if(learningPath)
 
 game.readyPromise.then(() =>
 {
+    // Keep the original ramps/crates available in debug mode for physics tests,
+    // but hide them during the portfolio tour so the road and city read cleanly.
+    if(!debugMode && game.world.playground?.group)
+        game.world.playground.group.visible = false
+
     // Scrolling is the camera's sole owner for the portfolio experience.
     game.view.scrollTour = new ScrollTour(game)
     root.classList.add('is-tour-ready')
