@@ -91,8 +91,8 @@ try
         throw new Error('Scroll-reactive light trails missing; got ' + initial.energyNodes)
     if(initial.ambientMotes !== 300)
         throw new Error('WebGL atmosphere particles missing; got ' + initial.ambientMotes)
-    if(initial.storyBoards !== 9)
-        throw new Error('Expected 9 readable in-world story boards; got ' + initial.storyBoards)
+    if(initial.storyBoards !== 11)
+        throw new Error('Expected 11 readable in-world story boards; got ' + initial.storyBoards)
     if(initial.riftGates !== 3)
         throw new Error('Expected 3 animated WebGL energy gates; got ' + initial.riftGates)
     if(initial.maxBannerLines < 4)
@@ -121,8 +121,9 @@ try
     })
 
     await page.waitForFunction(() =>
-        window.game.view.scrollTour.progress > 0.685
-        && window.game.view.scrollTour.storyFocusWeight > 0.35,
+        Math.abs(window.game.view.scrollTour.progress - 0.70) < 0.001
+        && window.game.view.scrollTour.bannerPauseAt === 0.70
+        && window.game.view.scrollTour.storyFocusWeight > 0.99,
         null,
         { timeout: 30000 }
     )
@@ -137,7 +138,14 @@ try
             wheel: game.world.visualVehicle.wheels[0].spinner.rotation.z,
             storyFocusWeight: game.view.scrollTour.storyFocusWeight,
             storyFocusStop: game.view.scrollTour.storyFocusStop,
-            focusStops: game.view.scrollTour.storyFocusStops.length
+            focusStops: game.view.scrollTour.storyFocusStops.length,
+            bannerPauseAt: game.view.scrollTour.bannerPauseAt,
+            bannerPauseCount: game.view.scrollTour.bannerPauseCount,
+            bannerFacingDot: (() => {
+                const stop = game.view.scrollTour.storyFocusStops.find(item => item.t === 0.70)
+                const viewDirection = game.view.camera.getWorldDirection(game.view.scrollTour.cameraTarget.clone())
+                return viewDirection.dot(stop.normal.clone().negate())
+            })()
         }
     })
 
@@ -157,10 +165,14 @@ try
         throw new Error('Chase camera did not follow the scroll journey; moved ' + cameraChange.toFixed(2))
     if(Math.abs(midRide.wheel - initial.wheel) < 10)
         throw new Error('Scooter wheel animation is not connected to scroll progress')
-    if(midRide.focusStops !== 9)
+    if(midRide.focusStops !== 11)
         throw new Error('Camera story focus keyframes missing; got ' + midRide.focusStops)
-    if(midRide.storyFocusWeight < 0.35)
-        throw new Error('Camera did not reframe for readable in-world storytelling; focus=' + midRide.storyFocusWeight)
+    if(midRide.storyFocusWeight < 0.99)
+        throw new Error('Camera did not settle on the physical roadside banner; focus=' + midRide.storyFocusWeight)
+    if(midRide.bannerPauseAt !== 0.70 || midRide.bannerPauseCount < 1)
+        throw new Error('Scroll did not pause at the project banner for reading')
+    if(midRide.bannerFacingDot < 0.97)
+        throw new Error('Camera is not facing the banner directly; dot=' + midRide.bannerFacingDot.toFixed(3))
 
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight - window.innerHeight))
     await page.waitForFunction(() => window.game.view.scrollTour.progress > 0.96, null, { timeout: 30000 })
@@ -199,7 +211,7 @@ try
             riderTravelled: Number(positionChange.toFixed(2)),
             cameraTravelled: Number(cameraChange.toFixed(2)),
             wheelsAnimated: Math.abs(midRide.wheel - initial.wheel) > 10,
-            signFocus: { weight: Number(midRide.storyFocusWeight.toFixed(3)), stop: midRide.storyFocusStop },
+            signFocus: { weight: Number(midRide.storyFocusWeight.toFixed(3)), stop: midRide.storyFocusStop, pauseAt: midRide.bannerPauseAt, pauseCount: midRide.bannerPauseCount, facingDot: Number(midRide.bannerFacingDot.toFixed(3)) },
             endProgress: Number(endRide.progress.toFixed(3))
         },
         triangles: initial.triangles,
