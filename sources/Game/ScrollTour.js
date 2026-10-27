@@ -30,7 +30,11 @@ export class ScrollTour
         this.side = new THREE.Vector3()
         this.cameraTarget = new THREE.Vector3()
         this.cameraPosition = new THREE.Vector3()
+        this.bannerCameraPosition = new THREE.Vector3()
         this.vehicleQuaternion = new THREE.Quaternion()
+        this.bannerPauseAt = null
+        this.bannerPauseUntil = 0
+        this.bannerPauseCount = 0
         this.rollQuaternion = new THREE.Quaternion()
         this.pointer = { x: 0, y: 0 }
         this.pointerTarget = { x: 0, y: 0 }
@@ -48,22 +52,26 @@ export class ScrollTour
             { t: 0.025, side: 1 },
             { t: 0.13, side: -1 },
             { t: 0.275, side: 1 },
-            { t: 0.48, side: -1 },
+            { t: 0.405, side: -1 },
+            { t: 0.465, side: 1 },
+            { t: 0.535, side: -1 },
             { t: 0.70, side: 1 },
             { t: 0.82, side: 1 },
             { t: 0.89, side: -1 },
             { t: 0.955, side: 1 },
             { t: 0.99, side: 1 }
         ]
-        const boardOffset = this.game.world.scrollWorld.storyBoardOffset ?? (window.innerWidth < 760 ? 6 : 7.2)
+        const compact = window.innerWidth < 760
+        const boardOffset = this.game.world.scrollWorld.storyBoardOffset ?? (compact ? 6.35 : 8.25)
         this.storyFocusStops = storyStops.map(stop =>
         {
             const position = this.roadCurve.getPointAt(stop.t)
             const tangent = this.roadCurve.getTangentAt(stop.t).setY(0).normalize()
             const side = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize()
+            const normal = side.clone().multiplyScalar(-stop.side)
             const target = position.addScaledVector(side, stop.side * boardOffset)
-            target.y = window.innerWidth < 760 ? 2.68 : 3.28
-            return { ...stop, target }
+            target.y = compact ? 2.68 : 3.28
+            return { ...stop, target, normal }
         })
 
         // The route is paced by real content chapters, not raw document height.
@@ -254,11 +262,46 @@ export class ScrollTour
         const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
         const immediateUpdate = immediate || reducedMotion
         const progressDamping = 1 - Math.exp(-delta * (reducedMotion ? 18 : 6.4))
+        const proposedProgress = clamp(
+            immediateUpdate
+                ? this.targetProgress
+                : this.progress + (this.targetProgress - this.progress) * progressDamping,
+            0,
+            1
+        )
+        const now = performance.now()
 
-        this.progress = immediateUpdate
-            ? this.targetProgress
-            : this.progress + (this.targetProgress - this.progress) * progressDamping
-        this.progress = clamp(this.progress, 0, 1)
+        // Pause the route itself briefly at each physical information board.
+        // The page keeps its scroll target, so the ride resumes naturally after
+        // the reader has had a moment to read the banner.
+        if(!immediateUpdate && !reducedMotion && this.bannerPauseAt !== null && now < this.bannerPauseUntil)
+        {
+            this.progress = this.bannerPauseAt
+        }
+        else
+        {
+            this.bannerPauseAt = null
+            this.bannerPauseUntil = 0
+            const direction = proposedProgress - this.progress
+            const crossedBanner = !immediateUpdate && !reducedMotion
+                ? this.storyFocusStops.find(stop =>
+                    direction > 0
+                        ? this.progress < stop.t && proposedProgress >= stop.t
+                        : direction < 0
+                            ? this.progress > stop.t && proposedProgress <= stop.t
+                            : false)
+                : null
+
+            if(crossedBanner)
+            {
+                this.progress = crossedBanner.t
+                this.bannerPauseAt = crossedBanner.t
+                this.bannerPauseUntil = now + 1150
+                this.bannerPauseCount++
+            }
+            else
+                this.progress = proposedProgress
+        }
 
         this.updateVehicle()
 
@@ -331,12 +374,26 @@ export class ScrollTour
         this.cameraPosition.addScaledVector(this.side, this.pointer.x * 0.42)
         this.cameraPosition.y -= this.pointer.y * 0.16
 
+        // A banner is read from directly in front of its face: the camera
+        // turns 90 degrees off the road tangent and holds a clean, near-level
+        // composition for the dwell. This removes the old tiny edge-of-screen
+        // sign view and makes the printed copy legible.
+        if(focusStop && focusWeight > 0.001)
+        {
+            const distance = window.innerWidth < 760 ? 5.25 : 5.35
+            this.bannerCameraPosition.copy(focusStop.target)
+                .addScaledVector(focusStop.normal, distance)
+            this.bannerCameraPosition.y = focusStop.target.y + (window.innerWidth < 760 ? 0.04 : 0.08)
+            this.cameraPosition.lerp(this.bannerCameraPosition, focusWeight)
+        }
+
         const cameraDamping = immediateUpdate ? 1 : 1 - Math.exp(-delta * 6.4)
         camera.position.lerp(this.cameraPosition, cameraDamping)
         this.lookTarget.lerp(this.cameraTarget, immediateUpdate ? 1 : 1 - Math.exp(-delta * 7.3))
         camera.lookAt(this.lookTarget)
 
-        const nextFov = mix(mix(53, 49, finale) + waterfall * 3.5 + cityReveal * 1.2 + scenicReveal * 3.4, 47.5, focusWeight)
+        const sceneFov = mix(53, 49, finale) + waterfall * 3.5 + cityReveal * 1.2 + scenicReveal * 3.4
+        const nextFov = mix(sceneFov, 54, focusWeight)
         if(Math.abs(nextFov - this.lastFov) > 0.25)
         {
             camera.fov = nextFov
