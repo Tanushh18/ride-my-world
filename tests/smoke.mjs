@@ -15,6 +15,7 @@
  * flags that turn it on. Without them the app takes its WebGL2 fallback path.
  */
 import { chromium } from 'playwright'
+import projects from '../sources/data/projects.js'
 
 // Headless means software rendering, which cannot afford the full grass field
 const URL = process.env.SMOKE_URL
@@ -211,7 +212,7 @@ const checks = [
     [ 'car changed heading',      probe.turned > 1,                             `turned ${probe.turned.toFixed(2)} rad total` ],
     [ 'wheels spun',              Math.abs(after.wheelRotation) > 1,            `${after.wheelRotation.toFixed(2)} rad` ],
     [ 'car did not fall through',  after.position.y > 0.5 && after.position.y < 30, `y = ${after.position.y.toFixed(2)}` ],
-    [ 'a zone per project',       inZone.zoneCount === 4,                       `${inZone.zoneCount} zones` ],
+    [ 'a zone per project',       inZone.zoneCount === projects.length,      `${inZone.zoneCount} zones for ${projects.length} projects` ],
     [ 'card shows inside a zone', inZone.isVisible && inZone.activeId !== null, `${inZone.activeId} — "${inZone.title}"` ],
     [ 'card was filled in',       inZone.title.length > 0 && inZone.linkCount > 0, `${inZone.linkCount} link(s)` ],
     [ 'card hides outside zones', !outOfZone.isVisible && outOfZone.activeId === null, outOfZone.activeId ? `still ${outOfZone.activeId}` : 'none active' ]
