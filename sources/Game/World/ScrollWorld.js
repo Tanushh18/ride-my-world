@@ -28,6 +28,7 @@ export class ScrollWorld
         this.moteBaseY = new Float32Array(0)
         this.motePhase = new Float32Array(0)
         this.storyBoards = []
+        this.facadeLabels = []
         this.paperNote = null
 
         this.roadPoints = [
@@ -619,6 +620,9 @@ export class ScrollWorld
             awning.castShadow = true
             assembly.add(awning)
 
+            if(buildingIndex < portfolio.projects.length)
+                this.addFacadeProjectSign(assembly, building, frontZ, portfolio.projects[buildingIndex], buildingIndex)
+
             const roof = new THREE.Mesh(
                 new THREE.BoxGeometry(building.width + 0.7, 0.36, building.depth + 0.7),
                 roofMaterials[buildingIndex % roofMaterials.length]
@@ -671,6 +675,76 @@ export class ScrollWorld
         this.group.add(windowInstances)
 
         this.addStreetLights()
+    }
+
+    createFacadeTexture(project, index)
+    {
+        const canvas = document.createElement('canvas')
+        canvas.width = 1200
+        canvas.height = 320
+        const ctx = canvas.getContext('2d')
+        if(!ctx)
+            return null
+
+        const gradient = ctx.createLinearGradient(0, 0, 1200, 320)
+        gradient.addColorStop(0, '#fff7e8')
+        gradient.addColorStop(1, '#ead6bd')
+        ctx.fillStyle = gradient
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        ctx.fillStyle = project.accent === 'mint' ? '#3a9a8a' : project.accent === 'amber' ? '#c8845f' : '#6f7aa8'
+        ctx.fillRect(0, 0, 12, canvas.height)
+        ctx.fillStyle = '#42676a'
+        ctx.font = '700 20px Arial, sans-serif'
+        ctx.fillText('T.  /  PROJECT ' + String(index + 1).padStart(2, '0'), 42, 52)
+
+        let fontSize = 72
+        ctx.font = '700 ' + fontSize + 'px Arial, sans-serif'
+        while(ctx.measureText(project.title.toUpperCase()).width > 1110 && fontSize > 42)
+        {
+            fontSize -= 2
+            ctx.font = '700 ' + fontSize + 'px Arial, sans-serif'
+        }
+        ctx.fillStyle = '#18383d'
+        ctx.fillText(project.title.toUpperCase(), 42, 145)
+
+        ctx.fillStyle = '#536b68'
+        ctx.font = '600 26px Arial, sans-serif'
+        ctx.fillText(project.subtitle.toUpperCase(), 42, 205)
+        ctx.fillStyle = '#b46d54'
+        ctx.fillRect(42, 247, 104, 7)
+        ctx.textAlign = 'right'
+        ctx.fillStyle = '#846c5e'
+        ctx.font = '600 17px Arial, sans-serif'
+        ctx.fillText('BUILT BY TANUSH CHAWLA', 1155, 284)
+
+        const texture = new THREE.CanvasTexture(canvas)
+        texture.colorSpace = THREE.SRGBColorSpace
+        texture.anisotropy = Math.min(8, this.game.rendering.renderer.capabilities?.getMaxAnisotropy?.() ?? 1)
+        return texture
+    }
+
+    addFacadeProjectSign(assembly, building, frontZ, project, index)
+    {
+        // The first six boulevard façades carry actual project marquees, so
+        // names belong to the buildings rather than floating UI cards.
+        const texture = this.createFacadeTexture(project, index)
+        if(!texture)
+            return
+
+        const sign = new THREE.Mesh(
+            new THREE.PlaneGeometry(Math.min(building.width * 0.78, 7.6), 1.28),
+            new THREE.MeshBasicMaterial({
+                map: texture,
+                side: THREE.DoubleSide,
+                toneMapped: false
+            })
+        )
+        sign.position.set(0, 4.62, frontZ + (frontZ > 0 ? 0.12 : -0.12))
+        sign.rotation.y = frontZ < 0 ? Math.PI : 0
+        sign.renderOrder = 4
+        sign.frustumCulled = false
+        assembly.add(sign)
+        this.facadeLabels.push(sign)
     }
 
     addStreetLights()
