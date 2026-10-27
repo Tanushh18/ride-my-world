@@ -1241,19 +1241,24 @@ export class ScrollWorld
 
             const orbit = new THREE.Group()
             orbit.position.z = 0.1
+            const sparkMaterial = new THREE.MeshBasicMaterial({
+                color: '#ffffff', transparent: true, opacity: 0.75,
+                blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false
+            })
+            const sparks = new THREE.InstancedMesh(moteGeometry, sparkMaterial, 8)
+            const sparkTransform = new THREE.Object3D()
             for(let mote = 0; mote < 8; mote++)
             {
-                const sparkMaterial = new THREE.MeshBasicMaterial({
-                    color: mote % 2 ? config.second : '#fff8e8',
-                    transparent: true, opacity: 0.75,
-                    blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false
-                })
-                const spark = new THREE.Mesh(moteGeometry, sparkMaterial)
                 const angle = mote / 8 * Math.PI * 2
-                spark.position.set(Math.cos(angle) * 2.26, Math.sin(angle) * 2.26, 0)
-                spark.scale.setScalar(mote % 3 === 0 ? 1.4 : 1)
-                orbit.add(spark)
+                sparkTransform.position.set(Math.cos(angle) * 2.26, Math.sin(angle) * 2.26, 0)
+                sparkTransform.scale.setScalar(mote % 3 === 0 ? 1.4 : 1)
+                sparkTransform.updateMatrix()
+                sparks.setMatrixAt(mote, sparkTransform.matrix)
+                sparks.setColorAt(mote, new THREE.Color(mote % 2 ? config.second : '#fff8e8'))
             }
+            sparks.instanceMatrix.needsUpdate = true
+            sparks.renderOrder = 5
+            orbit.add(sparks)
             gate.add(orbit)
 
             this.group.add(gate)
