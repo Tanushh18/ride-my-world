@@ -15,7 +15,9 @@ export default {
         description: 'I enjoy turning ideas into usable products, connecting different systems, and learning by building. This portfolio is designed as a journey through that work—not just a list of links.',
         note: 'Personal introduction will be refined using my resume.'
     },
-    skills: [
+    skills: {
+        lede: 'A growing toolkit across product engineering, backend systems, and AI workflows. Categories are based on current projects; the full list will be refined from my resume.',
+        items: [
         {
             code: 'A / 01',
             icon: '◫',
@@ -37,7 +39,8 @@ export default {
             description: 'Retrieval workflows, multi-step research systems, and practical automation.',
             tags: ['RAG', 'LangGraph', 'Workflows']
         }
-    ],
+        ]
+    },
     experience: {
         kicker: 'PROFESSIONAL EXPERIENCE',
         title: 'Career timeline',
