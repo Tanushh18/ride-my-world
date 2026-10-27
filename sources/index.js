@@ -13,12 +13,16 @@ const loaderNote = document.querySelector('[data-loader-note]')
 document.addEventListener('portfolio:loading', (event) =>
 {
     const { title, note, stage } = event.detail ?? {}
+    const loaderProgress = { boot: 8, renderer: 32, physics: 56, world: 80, ready: 100 }
     if(loaderTitle && title)
         loaderTitle.textContent = title
     if(loaderNote && note)
         loaderNote.textContent = note
     if(loader)
+    {
         loader.dataset.stage = stage ?? 'boot'
+        loader.style.setProperty('--loader-progress', (loaderProgress[stage] ?? 8) + '%')
+    }
 })
 
 const debugMode = window.location.hash.match(/debug/i)
