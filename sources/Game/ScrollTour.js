@@ -18,22 +18,22 @@ export class ScrollTour
             new THREE.Vector3(-138, 34, 90),
             new THREE.Vector3(-108, 22, 38),
             new THREE.Vector3(-78, 13, 3),
-            new THREE.Vector3(-42, 14, 30),
-            new THREE.Vector3(-7, 12, -16),
-            new THREE.Vector3(28, 18, -47),
-            new THREE.Vector3(64, 24, -82),
-            new THREE.Vector3(100, 30, -112)
+            new THREE.Vector3(8, 19, -20),
+            new THREE.Vector3(39, 18, -65),
+            new THREE.Vector3(78, 24, -95),
+            new THREE.Vector3(106, 26, -96),
+            new THREE.Vector3(130, 34, -136)
         ], false, 'catmullrom', 0.28)
 
         this.targetPath = new THREE.CatmullRomCurve3([
             new THREE.Vector3(-95, 0, 50),
             new THREE.Vector3(-87, 1, 10),
             new THREE.Vector3(-48, 2, 8),
-            new THREE.Vector3(-12, 0, -19),
-            new THREE.Vector3(18, 2, -41),
-            new THREE.Vector3(53, 7, -58),
-            new THREE.Vector3(82, 4, -90),
-            new THREE.Vector3(115, 8, -105)
+            new THREE.Vector3(28, 2, -42),
+            new THREE.Vector3(62, 5, -62),
+            new THREE.Vector3(87, 4, -94),
+            new THREE.Vector3(120, 5, -100),
+            new THREE.Vector3(126, 3, -112)
         ], false, 'catmullrom', 0.28)
 
         const camera = this.game.view.camera
