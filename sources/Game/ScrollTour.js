@@ -41,6 +41,31 @@ export class ScrollTour
         this.roadCurve = this.game.world.scrollWorld.roadCurve
         this.roadLength = this.roadCurve.getLength()
 
+        // Camera beats are tied to the real in-world boards. As each board
+        // arrives beside the rider, the view eases toward it instead of letting
+        // useful writing remain tiny scenery at the edge of the screen.
+        const storyStops = [
+            { t: 0.025, side: -1 },
+            { t: 0.13, side: 1 },
+            { t: 0.275, side: -1 },
+            { t: 0.48, side: 1 },
+            { t: 0.70, side: -1 },
+            { t: 0.82, side: 1 },
+            { t: 0.89, side: -1 },
+            { t: 0.955, side: 1 },
+            { t: 0.99, side: -1 }
+        ]
+        const boardOffset = this.game.world.scrollWorld.storyBoardOffset ?? (window.innerWidth < 760 ? 6 : 7.2)
+        this.storyFocusStops = storyStops.map(stop =>
+        {
+            const position = this.roadCurve.getPointAt(stop.t)
+            const tangent = this.roadCurve.getTangentAt(stop.t).setY(0).normalize()
+            const side = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize()
+            const target = position.addScaledVector(side, stop.side * boardOffset)
+            target.y = window.innerWidth < 760 ? 2.55 : 2.95
+            return { ...stop, target }
+        })
+
         // The route is paced by real content chapters, not raw document height.
         // Larger project sections can take longer to read while the ride keeps
         // moving through the district naturally.
@@ -236,13 +261,35 @@ export class ScrollTour
         const cityReveal = smoothstep(0.68, 0.82, this.progress)
         const finale = smoothstep(0.92, 0.99, this.progress)
 
-        const followDistance = mix(7.8, 4.35, establishing) + waterfall * 1.6 + cityReveal * 0.75 + finale * 4.8
-        const cameraHeight = mix(4.85, 2.45, establishing) + waterfall * 1.45 + cityReveal * 1.2 + finale * 3.15
-        const sideOffset = waterfall * 3.0 + cityReveal * 1.1 - finale * 2.0
+        const baseFollowDistance = mix(7.8, 4.35, establishing) + waterfall * 1.6 + cityReveal * 0.75 + finale * 4.8
+        const baseCameraHeight = mix(4.85, 2.45, establishing) + waterfall * 1.45 + cityReveal * 1.2 + finale * 3.15
+        const baseSideOffset = waterfall * 3.0 + cityReveal * 1.1 - finale * 2.0
         const lookAhead = mix(5.8, 4.4, establishing) + waterfall * 1.6 + finale * 4.4
+
+        let focusWeight = 0
+        let focusStop = null
+        for(const stop of this.storyFocusStops)
+        {
+            const enter = smoothstep(stop.t - 0.04, stop.t - 0.012, this.progress)
+            const leave = 1 - smoothstep(stop.t + 0.012, stop.t + 0.04, this.progress)
+            const weight = enter * leave
+            if(weight > focusWeight)
+            {
+                focusWeight = weight
+                focusStop = stop
+            }
+        }
+
+        // Hold the wider scene for context, then settle on the nearby sign at
+        // near eye level. Both the pan and the zoom follow the scroll easing.
+        const followDistance = mix(baseFollowDistance, baseFollowDistance + 0.9, focusWeight)
+        const cameraHeight = mix(baseCameraHeight, 3.05, focusWeight)
+        const sideOffset = baseSideOffset * (1 - focusWeight * 0.72)
 
         this.roadCurve.getPointAt(Math.min(1, this.progress + lookAhead / Math.max(this.roadLength, 1)), this.cameraTarget)
         this.cameraTarget.y = this.routePoint.y + mix(1.25, 1.65, finale)
+        if(focusStop)
+            this.cameraTarget.lerp(focusStop.target, focusWeight * 0.94)
 
         this.cameraPosition.copy(this.routePoint)
             .addScaledVector(this.tangent, -followDistance)
@@ -256,7 +303,7 @@ export class ScrollTour
         this.lookTarget.lerp(this.cameraTarget, immediateUpdate ? 1 : 1 - Math.exp(-delta * 6.1))
         camera.lookAt(this.lookTarget)
 
-        const nextFov = mix(53, 49, finale) + waterfall * 3.5 + cityReveal * 1.2
+        const nextFov = mix(mix(53, 49, finale) + waterfall * 3.5 + cityReveal * 1.2, 47.5, focusWeight)
         if(Math.abs(nextFov - this.lastFov) > 0.25)
         {
             camera.fov = nextFov
