@@ -16,6 +16,10 @@ export class ScrollWorld
         game.scene.add(this.group)
         this.waterfallStreams = []
         this.riverMaterial = null
+        this.energyInstances = null
+        this.moteGeometry = null
+        this.moteBaseY = new Float32Array(0)
+        this.motePhase = new Float32Array(0)
 
         this.roadPoints = [
             [-130, 55], [-118, 42], [-106, 24], [-100, 4],
@@ -42,9 +46,15 @@ export class ScrollWorld
         this.addLearningHub()
         this.addAirport()
         this.addSunDisk()
+        this.addLightTrails()
+        this.addAmbientParticles()
 
-        // The existing renderer-owned ticker animates water. No second RAF loop.
-        this.game.ticker.events.on('tick', () => { this.animateWater() }, 30)
+        // Reuse the renderer-owned ticker for water, particles and light motion.
+        this.game.ticker.events.on('tick', () =>
+        {
+            this.animateWater()
+            this.animateEffects()
+        }, 30)
     }
 
     material(hexColor, options = {})
@@ -900,6 +910,156 @@ export class ScrollWorld
             }
         })
         this.group.add(terminal)
+    }
+
+
+    addLightTrails()
+    {
+        // Thin additive rails along the road edge catch the eye as the rider
+        // travels through the route. They remain subtle in daylight sections.
+        for(const [index, sideSign] of [-1, 1].entries())
+        {
+            const points = []
+            for(let step = 0; step <= 300; step++)
+            {
+                const t = 0.015 + step / 300 * 0.97
+                const frame = this.routeFrame(t)
+                points.push(frame.position.clone().addScaledVector(frame.side, sideSign * 4.02).setY(0.225))
+            }
+
+            const geometry = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 300, 0.026, 5, false)
+            const material = new THREE.MeshBasicMaterial({
+                color: index === 0 ? '#82dfce' : '#ffd1a0',
+                transparent: true,
+                opacity: 0.23,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            })
+            const ribbon = new THREE.Mesh(geometry, material)
+            ribbon.renderOrder = 3
+            this.group.add(ribbon)
+        }
+
+        // Moving light nodes use a single instanced draw call. Their positions
+        // track the scroll-controlled rider, so the scenery has a real sense
+        // of motion without needing expensive full-screen post-processing.
+        const count = 32
+        const geometry = new THREE.SphereGeometry(0.115, 8, 6)
+        const material = new THREE.MeshBasicMaterial({
+            color: '#ffffff',
+            transparent: true,
+            opacity: 0.92,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        })
+        this.energyInstances = new THREE.InstancedMesh(geometry, material, count)
+        this.energyInstances.frustumCulled = false
+        this.energyCount = count
+        this.energyDummy = new THREE.Object3D()
+        this.energyColors = new Float32Array(count)
+
+        for(let index = 0; index < count; index++)
+        {
+            const teal = index % 3 === 0
+            this.energyColors[index] = teal ? 1 : 0
+            this.energyInstances.setColorAt(index, new THREE.Color(teal ? '#7debd8' : '#ffc889'))
+        }
+
+        this.energyInstances.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
+        this.energyInstances.renderOrder = 4
+        this.group.add(this.energyInstances)
+    }
+
+    addAmbientParticles()
+    {
+        // Tiny firefly-like particles form a shallow volumetric atmosphere.
+        // World positions stay anchored to the road while each mote floats.
+        const count = 300
+        const positions = new Float32Array(count * 3)
+        const colors = new Float32Array(count * 3)
+        this.moteBaseY = new Float32Array(count)
+        this.motePhase = new Float32Array(count)
+
+        const fract = value => value - Math.floor(value)
+        const seeded = index => fract(Math.sin(index * 127.1 + 311.7) * 43758.5453)
+
+        for(let index = 0; index < count; index++)
+        {
+            const t = 0.01 + seeded(index + 11) * 0.98
+            const frame = this.routeFrame(t)
+            const sideOffset = (seeded(index + 97) * 2 - 1) * (7 + seeded(index + 251) * 16)
+            const height = 0.6 + seeded(index + 401) * 10.5
+            const position = frame.position.clone().addScaledVector(frame.side, sideOffset)
+            const offset = index * 3
+
+            positions[offset] = position.x
+            positions[offset + 1] = height
+            positions[offset + 2] = position.z
+            this.moteBaseY[index] = height
+            this.motePhase[index] = seeded(index + 997) * Math.PI * 2
+
+            const tint = index % 4 === 0 ? new THREE.Color('#8de8d5') : new THREE.Color('#ffe0ae')
+            colors[offset] = tint.r
+            colors[offset + 1] = tint.g
+            colors[offset + 2] = tint.b
+        }
+
+        const geometry = new THREE.BufferGeometry()
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+        geometry.attributes.position.setUsage(THREE.DynamicDrawUsage)
+
+        const material = new THREE.PointsMaterial({
+            size: 0.105,
+            sizeAttenuation: true,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.62,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        })
+
+        this.moteGeometry = geometry
+        this.motes = new THREE.Points(geometry, material)
+        this.motes.frustumCulled = false
+        this.motes.renderOrder = 4
+        this.group.add(this.motes)
+    }
+
+    animateEffects()
+    {
+        const time = this.game.ticker.elapsed
+        const tour = this.game.view?.scrollTour
+        const progress = tour?.progress ?? 0
+        const count = this.energyCount ?? 0
+
+        if(this.energyInstances && count)
+        {
+            for(let index = 0; index < count; index++)
+            {
+                const lane = index % 2 === 0 ? -1 : 1
+                const slot = index / count
+                const t = THREE.MathUtils.clamp(progress + (slot - 0.5) * 0.46, 0.006, 0.994)
+                const frame = this.routeFrame(t)
+                const pulse = 0.82 + 0.18 * Math.sin(time * 2.5 + index * 0.8)
+
+                this.energyDummy.position.copy(frame.position)
+                    .addScaledVector(frame.side, lane * 4.15)
+                this.energyDummy.position.y = 0.24 + (index % 3) * 0.035
+                this.energyDummy.scale.setScalar(pulse)
+                this.energyDummy.updateMatrix()
+                this.energyInstances.setMatrixAt(index, this.energyDummy.matrix)
+            }
+            this.energyInstances.instanceMatrix.needsUpdate = true
+        }
+
+        if(this.moteGeometry)
+        {
+            const positions = this.moteGeometry.attributes.position
+            for(let index = 0; index < this.moteBaseY.length; index++)
+                positions.array[index * 3 + 1] = this.moteBaseY[index] + Math.sin(time * 0.8 + this.motePhase[index]) * 0.24
+            positions.needsUpdate = true
+        }
     }
 
     animateWater()
