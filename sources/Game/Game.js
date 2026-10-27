@@ -46,8 +46,16 @@ export class Game
         this.readyPromise = this.init()
     }
 
+    setLoadingStage(stage, title, note)
+    {
+        document.dispatchEvent(new CustomEvent('portfolio:loading', {
+            detail: { stage, title, note }
+        }))
+    }
+
     async init()
     {
+        this.setLoadingStage('boot', 'Warming up the engine', 'Starting the renderer and preparing the scene…')
         this.domElement = document.querySelector('.js-game')
         this.canvasElement = this.domElement.querySelector('.js-canvas')
 
@@ -69,9 +77,11 @@ export class Game
 
         this.rendering = new Rendering()
         await this.rendering.setRenderer()
+        this.setLoadingStage('renderer', 'Painting the world', 'WebGL renderer ready · shaping the light…')
 
         // Rapier ships as WASM, so it is imported dynamically and awaited
         this.RAPIER = await import('@dimforge/rapier3d')
+        this.setLoadingStage('physics', 'Tuning the ride', 'Preparing the road physics and rider…')
 
         // Simulation
         this.physics = new Physics()
@@ -85,12 +95,14 @@ export class Game
         this.fog = new Fog()
         this.lighting = new Lighting()
         this.materials = new Materials()
+        this.setLoadingStage('world', 'Building the city', 'Trees, river, waterfall and skyline are coming into view…')
         this.world = new World()
 
         // After the world, because the zones it reacts to are registered there
         this.projectCard = new ProjectCard()
 
         this.rendering.setPostProcessing()
+        this.setLoadingStage('ready', 'The road is yours', 'Almost there · your journey is ready.')
 
         document.documentElement.classList.add('is-ready')
 
