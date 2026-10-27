@@ -32,7 +32,20 @@ export class Scenery
             { x: 26, z: 6, radius: 8 },
             { x: -14, z: -14, radius: 8 },
 
-            // The projects plaza, so trees do not grow through the buildings
+            // Keep a clear corridor around the scripted scenic road. The
+            // larger circles are sparse clearings for the river and city skyline.
+            { x: -130, z: 55, radius: 14 },
+            { x: -106, z: 24, radius: 13 },
+            { x: -84, z: -12, radius: 13 },
+            { x: -48, z: 8, radius: 12 },
+            { x: -10, z: -3, radius: 13 },
+            { x: 15, z: -34, radius: 17 },
+            { x: 43, z: -56, radius: 14 },
+            { x: 76, z: -79, radius: 15 },
+            { x: 108, z: -98, radius: 19 },
+            { x: 126, z: -108, radius: 23 },
+
+            // Keep the project plaza and terminal approach readable.
             {
                 x: world.projectsArea.center.x,
                 z: world.projectsArea.center.z,
