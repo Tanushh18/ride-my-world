@@ -4,11 +4,9 @@ import { Events } from '../Events.js'
 import { lerp } from '../utilities/maths.js'
 
 /**
- * The car's simulation half: a cuboid chassis plus four raycast wheels driven
- * by Rapier's DynamicRayCastVehicleController.
- *
- * Runs twice per frame: priority 2 writes wheel forces from the player's
- * intent, priority 5 reads back speed, contacts and orientation.
+ * The scooter's simulation half: a compact chassis and paired raycast wheels
+ * driven by Rapier's DynamicRayCastVehicleController. The second wheel on each
+ * axle is kept close to the centreline for stable contact with the ground.
  */
 export class PhysicsVehicle
 {
@@ -54,18 +52,17 @@ export class PhysicsVehicle
     {
         this.chassis = {}
 
-        // Three colliders: the mass-carrying body with a low centre of mass so
-        // the car resists rolling, a light cabin, and a wide bumper that only
-        // interacts with world objects.
+        // A narrow deck and low centre of mass give the scooter a smaller
+        // collision footprint without changing the shared object/physics API.
         const object = this.game.objects.add(null, {
             type: 'dynamic',
             position: this.position,
             friction: 0.4,
             canSleep: false,
             colliders: [
-                { shape: 'cuboid', parameters: [ 1.28, 0.34, 0.81 ], mass: 2.5, position: { x: 0, y: -0.16, z: 0 }, centerOfMass: { x: 0, y: -0.5, z: 0 } },
-                { shape: 'cuboid', parameters: [ 0.7, 0.16, 0.7 ], mass: 0, position: { x: -0.1, y: 0.3, z: 0 } },
-                { shape: 'cuboid', parameters: [ 1.45, 0.42, 0.8 ], mass: 0, position: { x: 0.1, y: -0.22, z: 0 }, category: 'bumper' }
+                { shape: 'cuboid', parameters: [ 0.98, 0.2, 0.24 ], mass: 2.5, position: { x: 0, y: -0.12, z: 0 }, centerOfMass: { x: 0, y: -0.42, z: 0 } },
+                { shape: 'cuboid', parameters: [ 0.36, 0.16, 0.22 ], mass: 0, position: { x: -0.22, y: 0.2, z: 0 } },
+                { shape: 'cuboid', parameters: [ 1.12, 0.26, 0.25 ], mass: 0, position: { x: 0.05, y: -0.18, z: 0 }, category: 'bumper' }
             ]
         })
 
@@ -80,24 +77,25 @@ export class PhysicsVehicle
         this.wheels.items = []
 
         this.wheels.settings = {
-            offset: { x: 0.88, y: 0, z: 0.82 },
-            radius: 0.4,
-            width: 0.3,
-            restLength: 0.62,
-            suspensionStiffness: 25,
+            offset: { x: 0.88, y: 0, z: 0.17 },
+            radius: 0.36,
+            width: 0.19,
+            restLength: 0.56,
+            suspensionStiffness: 28,
             directionCs: { x: 0, y: -1, z: 0 },
             axleCs: { x: 0, y: 0, z: 1 },
             frictionSlip: 0.9,
             maxSuspensionForce: 150,
-            maxSuspensionTravel: 2,
-            sideFrictionStiffness: 3,
+            maxSuspensionTravel: 1.5,
+            sideFrictionStiffness: 3.5,
             suspensionCompression: 10,
             suspensionRelaxation: 2.7
         }
 
         const { offset, radius, restLength, directionCs, axleCs } = this.wheels.settings
 
-        // Front-left, front-right, rear-left, rear-right. Indices 0 and 1 steer.
+        // Two close-together support wheels at each axle; the visual model
+        // renders only one wheel at the centreline for a scooter silhouette.
         const positions = [
             new THREE.Vector3(  offset.x, offset.y,  offset.z),
             new THREE.Vector3(  offset.x, offset.y, -offset.z),
@@ -156,8 +154,8 @@ export class PhysicsVehicle
             * settings.engineForce
             / (1 + overflow)
 
-        // Braking: explicit brake, a light idle brake so the car settles, and a
-        // stronger brake when the player asks for the opposite direction.
+        // Braking: explicit brake, a light idle brake so the scooter settles,
+        // and a stronger brake when the player asks for the opposite direction.
         let brake = player.braking
 
         if(!player.braking && Math.abs(player.accelerating) < 0.1)
@@ -247,7 +245,7 @@ export class PhysicsVehicle
 
     setDebug()
     {
-        const panel = this.game.debug.addFolder({ title: 'Vehicle', expanded: true })
+        const panel = this.game.debug.addFolder({ title: 'Scooter', expanded: true })
 
         if(!panel)
             return
