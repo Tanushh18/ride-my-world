@@ -3,14 +3,8 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { Game } from '../Game.js'
 
 /**
- * The car's visual half, built entirely from rounded primitives.
- *
- * Rounded boxes rather than plain ones: the soft edge catches the light along
- * its curve, which is what stops the car reading as a crate. Its dimensions
- * mirror the chassis colliders, so what you see is what the physics simulates.
- *
- * The body group follows the chassis rigid body; the wheels are its children, so
- * suspension travel, steering and spin are plain local transforms.
+ * The visible scooter and rider. The underlying vehicle remains Rapier-driven;
+ * this class is only the visual model that follows its chassis and wheel state.
  */
 export class VisualVehicle
 {
@@ -31,62 +25,129 @@ export class VisualVehicle
     {
         const materials = this.game.materials
 
-        const parts = [
-            // Main hull — matches the 1.28 x 0.34 x 0.75 chassis collider
-            { size: [ 2.56, 0.6, 1.62 ], radius: 0.14, position: [ 0, -0.2, 0 ], material: 'carPaint' },
-            // A thin glass band, not a full-height cabin
-            { size: [ 1.4, 0.3, 1.42 ], radius: 0.1, position: [ -0.1, 0.22, 0 ], material: 'carGlass' },
-            // Roof, slightly wider than the glass so it reads as an overhang
-            { size: [ 1.5, 0.13, 1.46 ], radius: 0.06, position: [ -0.12, 0.42, 0 ], material: 'carPaint' },
-            // Bumpers
-            { size: [ 0.3, 0.3, 1.54 ], radius: 0.09, position: [ 1.3, -0.24, 0 ], material: 'carDark' },
-            { size: [ 0.28, 0.3, 1.54 ], radius: 0.09, position: [ -1.32, -0.24, 0 ], material: 'carDark' },
-            // Spoiler on two legs
-            { size: [ 0.4, 0.09, 1.35 ], radius: 0.04, position: [ -1.26, 0.3, 0 ], material: 'carDark' },
-            { size: [ 0.1, 0.24, 0.1 ], radius: 0.03, position: [ -1.22, 0.16, 0.55 ], material: 'carDark' },
-            { size: [ 0.1, 0.24, 0.1 ], radius: 0.03, position: [ -1.22, 0.16, -0.55 ], material: 'carDark' },
-            // Headlights
-            { size: [ 0.1, 0.18, 0.26 ], radius: 0.05, position: [ 1.34, -0.06, 0.46 ], material: 'accent' },
-            { size: [ 0.1, 0.18, 0.26 ], radius: 0.05, position: [ 1.34, -0.06, -0.46 ], material: 'accent' },
-            // Tail lights
-            { size: [ 0.09, 0.14, 0.24 ], radius: 0.045, position: [ -1.4, -0.06, 0.48 ], material: 'accentWarm' },
-            { size: [ 0.09, 0.14, 0.24 ], radius: 0.045, position: [ -1.4, -0.06, -0.48 ], material: 'accentWarm' }
-        ]
-
-        for(const part of parts)
+        const addRoundedBox = (size, radius, position, materialName) =>
         {
-            const geometry = new RoundedBoxGeometry(...part.size, 3, part.radius)
-            const mesh = new THREE.Mesh(geometry, materials.get(part.material))
-
-            mesh.position.set(...part.position)
+            const geometry = new RoundedBoxGeometry(...size, 3, radius)
+            const mesh = new THREE.Mesh(geometry, materials.get(materialName))
+            mesh.position.set(...position)
             mesh.castShadow = true
             mesh.receiveShadow = true
-
             this.group.add(mesh)
+            return mesh
         }
+
+        const addSphere = (radius, position, materialName, scale = [ 1, 1, 1 ]) =>
+        {
+            const mesh = new THREE.Mesh(
+                new THREE.SphereGeometry(radius, 14, 10),
+                materials.get(materialName)
+            )
+            mesh.position.set(...position)
+            mesh.scale.set(...scale)
+            mesh.castShadow = true
+            mesh.receiveShadow = true
+            this.group.add(mesh)
+            return mesh
+        }
+
+        const addTubeBetween = (startValues, endValues, radius, materialName) =>
+        {
+            const start = new THREE.Vector3(...startValues)
+            const end = new THREE.Vector3(...endValues)
+            const direction = new THREE.Vector3().subVectors(end, start)
+            const mesh = new THREE.Mesh(
+                new THREE.CylinderGeometry(radius, radius, direction.length(), 10),
+                materials.get(materialName)
+            )
+
+            mesh.position.copy(start).add(end).multiplyScalar(0.5)
+            mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize())
+            mesh.castShadow = true
+            mesh.receiveShadow = true
+            this.group.add(mesh)
+            return mesh
+        }
+
+        // Scooter deck, lower shell, front apron, seat, and wheel guards.
+        addRoundedBox([ 0.98, 0.12, 0.34 ], 0.055, [ 0.02, -0.13, 0 ], 'carDark')
+        addRoundedBox([ 0.57, 0.39, 0.37 ], 0.12, [ -0.28, 0.12, 0 ], 'carPaint')
+        addRoundedBox([ 0.34, 0.62, 0.36 ], 0.12, [ 0.48, 0.12, 0 ], 'carPaint')
+        addRoundedBox([ 0.24, 0.13, 0.33 ], 0.055, [ 0.56, 0.43, 0 ], 'carPaintDark')
+        addRoundedBox([ 0.62, 0.12, 0.29 ], 0.055, [ -0.27, 0.41, 0 ], 'carDark')
+        addRoundedBox([ 0.46, 0.065, 0.29 ], 0.03, [ -0.72, -0.14, 0 ], 'carPaintDark')
+        addRoundedBox([ 0.38, 0.065, 0.28 ], 0.03, [ 0.78, -0.16, 0 ], 'carPaintDark')
+
+        // Steering stem and handlebars sit above the front apron.
+        addTubeBetween([ 0.76, -0.2, 0 ], [ 0.42, 0.57, 0 ], 0.035, 'metal')
+
+        const handlebar = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.027, 0.027, 0.62, 10),
+            materials.get('carDark')
+        )
+        handlebar.rotation.x = Math.PI * 0.5
+        handlebar.position.set(0.42, 0.57, 0)
+        handlebar.castShadow = true
+        this.group.add(handlebar)
+
+        for(const side of [ -1, 1 ])
+        {
+            // Mirrors and grips are mirrored across the scooter centreline.
+            addRoundedBox([ 0.15, 0.055, 0.075 ], 0.025, [ 0.42, 0.57, side * 0.32 ], 'carDark')
+            addTubeBetween([ 0.39, 0.59, side * 0.19 ], [ 0.28, 0.81, side * 0.25 ], 0.018, 'metal')
+            addSphere(0.065, [ 0.28, 0.83, side * 0.25 ], 'metal', [ 0.9, 0.55, 1.15 ])
+
+            // Simplified rider arms reach the handlebars.
+            addTubeBetween([ 0.12, 0.76, side * 0.13 ], [ 0.39, 0.59, side * 0.23 ], 0.052, 'carDark')
+            addSphere(0.058, [ 0.4, 0.59, side * 0.24 ], 'carPaintDark')
+
+            // Legs fold forward onto the footboard rather than dangling beside the wheel.
+            addTubeBetween([ -0.14, 0.45, side * 0.11 ], [ 0.2, -0.02, side * 0.095 ], 0.06, 'carDark')
+        }
+
+        // Stylised rider silhouette with a warm helmet and a cool visor.
+        addRoundedBox([ 0.37, 0.47, 0.34 ], 0.14, [ -0.015, 0.65, 0 ], 'carDark')
+        addSphere(0.215, [ 0.015, 1.005, 0 ], 'accent', [ 0.96, 1, 0.96 ])
+        addRoundedBox([ 0.085, 0.105, 0.275 ], 0.035, [ 0.205, 1.015, 0 ], 'carGlass')
+
+        // Headlamp, rear light, and a small front badge make the silhouette readable at distance.
+        addSphere(0.105, [ 0.665, 0.27, 0 ], 'accent', [ 0.72, 0.8, 1 ])
+        addRoundedBox([ 0.09, 0.12, 0.2 ], 0.035, [ -0.59, 0.21, 0 ], 'accentWarm')
+        addRoundedBox([ 0.08, 0.08, 0.13 ], 0.025, [ 0.68, 0.02, 0 ], 'accentCool')
     }
 
     setWheels()
     {
         const settings = this.game.physicsVehicle.wheels.settings
 
-        const tyreGeometry = new THREE.CylinderGeometry(settings.radius, settings.radius, settings.width, 16)
+        const tyreGeometry = new THREE.CylinderGeometry(settings.radius, settings.radius, settings.width, 18)
         tyreGeometry.rotateX(Math.PI * 0.5)
 
-        // Slightly proud of the tyre, so the spin is readable at speed
-        const rimGeometry = new THREE.CylinderGeometry(settings.radius * 0.52, settings.radius * 0.52, settings.width * 1.06, 6)
+        const rimGeometry = new THREE.CylinderGeometry(
+            settings.radius * 0.53,
+            settings.radius * 0.53,
+            settings.width * 1.08,
+            10
+        )
         rimGeometry.rotateX(Math.PI * 0.5)
 
-        const spokeGeometry = new RoundedBoxGeometry(settings.radius * 1.5, settings.radius * 0.16, settings.width * 1.08, 2, 0.04)
+        const spokeGeometry = new RoundedBoxGeometry(
+            settings.radius * 1.35,
+            settings.radius * 0.1,
+            settings.width * 1.1,
+            2,
+            0.025
+        )
 
         const tyreMaterial = this.game.materials.get('tyre')
         const rimMaterial = this.game.materials.get('rim')
 
         this.wheels = []
 
-        for(const wheel of this.game.physicsVehicle.wheels.items)
+        // The controller has paired raycast wheels for stability; only the two
+        // centreline wheels are drawn, so the ride reads as a scooter.
+        for(const index of [ 0, 2 ])
         {
-            // Holder takes the steering angle, spinner takes the rotation
+            const physical = this.game.physicsVehicle.wheels.items[index]
             const holder = new THREE.Group()
             const spinner = new THREE.Group()
 
@@ -96,13 +157,15 @@ export class VisualVehicle
             const rim = new THREE.Mesh(rimGeometry, rimMaterial)
             rim.castShadow = true
 
-            const spoke = new THREE.Mesh(spokeGeometry, rimMaterial)
+            const spokeA = new THREE.Mesh(spokeGeometry, rimMaterial)
+            const spokeB = new THREE.Mesh(spokeGeometry, rimMaterial)
+            spokeB.rotation.z = Math.PI * 0.5
 
-            spinner.add(tyre, rim, spoke)
+            spinner.add(tyre, rim, spokeA, spokeB)
             holder.add(spinner)
             this.group.add(holder)
 
-            this.wheels.push({ holder, spinner, physical: wheel })
+            this.wheels.push({ holder, spinner, physical })
         }
     }
 
@@ -117,11 +180,12 @@ export class VisualVehicle
         {
             const { basePosition, suspensionLength, steering, rotation } = wheel.physical
 
-            // Wheel centre = connection point + suspension direction * length
+            // Centre the visible wheels on the scooter, while following the
+            // physical suspension and steering at the front.
             wheel.holder.position.set(
                 basePosition.x,
                 basePosition.y - suspensionLength,
-                basePosition.z
+                0
             )
             wheel.holder.rotation.y = steering
             wheel.spinner.rotation.z = -rotation
