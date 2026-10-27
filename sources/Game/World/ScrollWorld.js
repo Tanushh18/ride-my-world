@@ -162,15 +162,12 @@ export class ScrollWorld
         const trunkGeometry = new THREE.CylinderGeometry(0.21, 0.29, 1, 7)
         const foliageGeometry = new THREE.IcosahedronGeometry(1, 0)
         const trunkMaterial = this.material('#705044', { roughness: 1 })
-        const canopyMaterials = [
-            this.material('#386e5a', { roughness: 1 }),
-            this.material('#54866a', { roughness: 1 }),
-            this.material('#7e9e70', { roughness: 1 })
-        ]
+        const canopyMaterial = this.material('#54866a', { roughness: 1 })
+        const canopyTopMaterial = this.material('#7e9e70', { roughness: 1 })
 
         const trunks = new THREE.InstancedMesh(trunkGeometry, trunkMaterial, placements.length)
-        const canopyA = canopyMaterials.map(material => new THREE.InstancedMesh(foliageGeometry, material, placements.length))
-        const canopyB = canopyMaterials.map(material => new THREE.InstancedMesh(foliageGeometry, material, placements.length))
+        const canopyA = new THREE.InstancedMesh(foliageGeometry, canopyMaterial, placements.length)
+        const canopyB = new THREE.InstancedMesh(foliageGeometry, canopyTopMaterial, placements.length)
         const dummy = new THREE.Object3D()
 
         placements.forEach((tree, index) =>
@@ -184,17 +181,16 @@ export class ScrollWorld
             dummy.updateMatrix()
             trunks.setMatrixAt(index, dummy.matrix)
 
-            const tint = index % canopyMaterials.length
             dummy.position.set(x, height * 0.91, z)
             dummy.rotation.set(0, tree.yaw, 0)
             dummy.scale.set(1.42 * tree.scale, 1.58 * tree.scale, 1.34 * tree.scale)
             dummy.updateMatrix()
-            canopyA[tint].setMatrixAt(index, dummy.matrix)
+            canopyA.setMatrixAt(index, dummy.matrix)
 
             dummy.position.set(x + Math.sin(tree.yaw) * 0.25, height * 1.23, z + Math.cos(tree.yaw) * 0.25)
             dummy.scale.set(1.04 * tree.scale, 1.05 * tree.scale, 1.04 * tree.scale)
             dummy.updateMatrix()
-            canopyB[tint].setMatrixAt(index, dummy.matrix)
+            canopyB.setMatrixAt(index, dummy.matrix)
         })
 
         trunks.castShadow = true
@@ -203,18 +199,13 @@ export class ScrollWorld
         trunks.computeBoundingSphere()
         this.group.add(trunks)
 
-        for(const meshes of [canopyA, canopyB])
+        for(const mesh of [canopyA, canopyB])
         {
-            meshes.forEach((mesh) =>
-            {
-                mesh.castShadow = true
-                mesh.receiveShadow = true
-                // Leave nonmatching tint instances degenerate instead of adding
-                // one draw call per individual tree.
-                mesh.instanceMatrix.needsUpdate = true
-                mesh.computeBoundingSphere()
-                this.group.add(mesh)
-            })
+            mesh.castShadow = true
+            mesh.receiveShadow = true
+            mesh.instanceMatrix.needsUpdate = true
+            mesh.computeBoundingSphere()
+            this.group.add(mesh)
         }
     }
 
