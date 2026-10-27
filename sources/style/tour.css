@@ -3740,3 +3740,35 @@ html.is-failed .cinematic-loader
         animation: none;
     }
 }
+
+
+
+/* Keep the project chapter open and cinematic; only the project cards carry glass. */
+.tour-content .projects-section .story-inner-wide
+{
+    --tour-cream: #f6f0df;
+    --tour-muted: rgba(246, 240, 223, 0.78);
+    --tour-line: rgba(246, 240, 223, 0.18);
+    --tour-accent: #f2b879;
+    --tour-teal: #8ed6c0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+}
+
+/* If WebGL is unavailable, the HTML portfolio must stay visible and usable. */
+html.is-failed .tour-content .story-section:not(.hero-section) .story-inner
+{
+    opacity: 1 !important;
+    transform: none !important;
+}
+
+@media (prefers-reduced-motion: reduce)
+{
+    .game::after,
+    .projects-section .project-card
+    {
+        transition: none !important;
+    }
+}
