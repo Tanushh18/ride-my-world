@@ -1773,12 +1773,110 @@ export class ScrollWorld
 
     createStoryTexture(item, index, count)
     {
+        const compact = window.innerWidth < 760
         const canvas = document.createElement('canvas')
-        canvas.width = 1400
-        canvas.height = 800
+        canvas.width = compact ? 1000 : 1400
+        canvas.height = compact ? 1550 : 800
         const ctx = canvas.getContext('2d')
         if(!ctx)
             return null
+
+        if(compact)
+        {
+            const gradient = ctx.createLinearGradient(0, 0, 1000, 1550)
+            gradient.addColorStop(0, '#fff9ec')
+            gradient.addColorStop(1, '#e9d7bd')
+            ctx.fillStyle = gradient
+            ctx.fillRect(0, 0, 1000, 1550)
+
+            ctx.fillStyle = 'rgba(49, 79, 79, 0.035)'
+            for(let x = 24; x < 1000; x += 32)
+                for(let y = 20; y < 1550; y += 34)
+                    ctx.fillRect(x, y, 1.5, 1.5)
+
+            ctx.fillStyle = '#31565a'
+            ctx.fillRect(0, 0, 12, 1550)
+            ctx.fillStyle = '#42676a'
+            ctx.font = '700 26px Arial, sans-serif'
+            ctx.fillText('T. / TANUSH CHAWLA', 58, 76)
+            ctx.textAlign = 'left'
+            ctx.fillStyle = '#846c5e'
+            ctx.font = '600 20px Arial, sans-serif'
+            ctx.fillText(item.kicker.toUpperCase(), 58, 118, 870)
+
+            ctx.strokeStyle = 'rgba(49, 86, 90, 0.24)'
+            ctx.lineWidth = 2
+            ctx.beginPath()
+            ctx.moveTo(58, 150)
+            ctx.lineTo(940, 150)
+            ctx.stroke()
+
+            let titleSize = 58
+            ctx.font = '700 ' + titleSize + 'px Arial, sans-serif'
+            while(ctx.measureText(item.title).width > 875 && titleSize > 34)
+            {
+                titleSize -= 2
+                ctx.font = '700 ' + titleSize + 'px Arial, sans-serif'
+            }
+            ctx.fillStyle = '#18383d'
+            ctx.fillText(item.title, 58, 245, 875)
+            ctx.fillStyle = item.accent ?? '#c27b5b'
+            ctx.fillRect(58, 283, 110, 8)
+
+            const hasLongCopy = item.lines.some(line => line.length > 45)
+            const bodyFontSize = hasLongCopy ? 30 : 34
+            const lineStep = hasLongCopy ? 46 : 52
+            ctx.font = '500 ' + bodyFontSize + 'px Arial, sans-serif'
+            ctx.fillStyle = '#3e5555'
+            let bodyY = 360
+            let renderedRows = 0
+            for(const line of item.lines.slice(0, 4))
+            {
+                let current = ''
+                for(const word of String(line).split(/\s+/))
+                {
+                    const candidate = current ? current + ' ' + word : word
+                    if(current && ctx.measureText(candidate).width > 875)
+                    {
+                        if(renderedRows >= 18)
+                            break
+                        ctx.fillText(current, 58, bodyY)
+                        bodyY += lineStep
+                        renderedRows++
+                        current = word
+                    }
+                    else
+                        current = candidate
+                }
+                if(current && renderedRows < 18)
+                {
+                    ctx.fillText(current, 58, bodyY, 875)
+                    bodyY += lineStep
+                    renderedRows++
+                }
+                if(renderedRows >= 18)
+                    break
+            }
+
+            ctx.strokeStyle = 'rgba(49, 86, 90, 0.22)'
+            ctx.beginPath()
+            ctx.moveTo(58, 1375)
+            ctx.lineTo(940, 1375)
+            ctx.stroke()
+            ctx.fillStyle = '#42676a'
+            ctx.font = '700 24px Arial, sans-serif'
+            ctx.fillText(item.footer.toUpperCase(), 58, 1420, 875)
+            ctx.textAlign = 'right'
+            ctx.fillStyle = '#b46d54'
+            ctx.font = '700 24px Arial, sans-serif'
+            ctx.fillText(String(index + 1).padStart(2, '0') + ' / ' + String(count).padStart(2, '0'), 938, 1490)
+
+            const mobileTexture = new THREE.CanvasTexture(canvas)
+            mobileTexture.colorSpace = THREE.SRGBColorSpace
+            mobileTexture.anisotropy = Math.min(8, this.game.rendering.renderer.capabilities?.getMaxAnisotropy?.() ?? 1)
+            mobileTexture.needsUpdate = true
+            return mobileTexture
+        }
 
         const wash = ctx.createLinearGradient(0, 0, 1400, 800)
         wash.addColorStop(0, '#fff9ec')
@@ -1835,7 +1933,7 @@ export class ScrollWorld
         // A board can use up to eight visual rows while keeping the footer clear.
         for(const line of bodyLines)
         {
-            const words = String(line).split(/\\s+/)
+            const words = String(line).split(/\s+/)
             let current = ''
             for(const word of words)
             {
@@ -1995,14 +2093,14 @@ export class ScrollWorld
                     portfolio.contact.email,
                     portfolio.contact.phone,
                     portfolio.contact.location + ' · India',
-                    'LinkedIn: ' + portfolio.links.linkedin.replace('https://www.linkedin.com/in/', '').replace(/\\/$/, '') + ' · GitHub: ' + portfolio.handle
+                    'LinkedIn: ' + portfolio.links.linkedin.replace('https://www.linkedin.com/in/', '') + ' · GitHub: ' + portfolio.handle
                 ],
                 footer: 'SAY HELLO  /  BUILD SOMETHING USEFUL', accent: '#3a9a8a'
             }
         ]
 
         const compact = window.innerWidth < 760
-        const boardWidth = compact ? 6.25 : 8.2
+        const boardWidth = compact ? 2.3 : 8.2
         const boardHeight = compact ? 3.58 : 4.7
         this.storyBoardOffset = compact ? 6.35 : 8.25
         const backingMaterial = this.material('#24484b', { roughness: 0.62, metalness: 0.24 })
