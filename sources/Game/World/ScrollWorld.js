@@ -27,6 +27,7 @@ export class ScrollWorld
         this.addRiverAndWaterfall()
         this.addBridge()
         this.addCity()
+        this.addLearningHub()
         this.addAirport()
 
         // One listener on the existing renderer-owned ticker keeps water
@@ -289,6 +290,55 @@ export class ScrollWorld
         }
     }
 
+
+
+    addLearningHub()
+    {
+        // A quiet library/campus landmark connects the city tour with the
+        // education and learning chapter without pretending to be a real school.
+        const stone = this.material('#b9bba6', { roughness: 0.7 })
+        const roofMaterial = this.material('#385b58', { roughness: 0.55 })
+        const glass = this.material('#94d6cb', {
+            roughness: 0.28,
+            metalness: 0.12,
+            emissive: '#285653',
+            emissiveIntensity: 0.2
+        })
+
+        const mainBuilding = new THREE.Mesh(new THREE.BoxGeometry(16, 5.4, 9), stone)
+        mainBuilding.position.set(84, 2.7, -107)
+        mainBuilding.castShadow = true
+        mainBuilding.receiveShadow = true
+        this.group.add(mainBuilding)
+
+        const roof = new THREE.Mesh(new THREE.BoxGeometry(17.5, 0.55, 10.5), roofMaterial)
+        roof.position.set(84, 5.65, -107)
+        this.group.add(roof)
+
+        const frontGlass = new THREE.Mesh(new THREE.BoxGeometry(13.5, 2.6, 0.14), glass)
+        frontGlass.position.set(84, 2.8, -102.42)
+        this.group.add(frontGlass)
+
+        const steps = new THREE.Mesh(new THREE.BoxGeometry(10, 0.25, 2.1), stone)
+        steps.position.set(84, 0.15, -100.7)
+        this.group.add(steps)
+
+        const pillarGeometry = new THREE.CylinderGeometry(0.22, 0.28, 4.2, 8)
+        for(const x of [78.5, 82.2, 85.8, 89.5])
+        {
+            const pillar = new THREE.Mesh(pillarGeometry, stone)
+            pillar.position.set(x, 2.6, -102.15)
+            pillar.castShadow = true
+            this.group.add(pillar)
+        }
+
+        const marker = new THREE.Mesh(
+            new THREE.BoxGeometry(2.8, 0.5, 0.16),
+            this.material('#f2b879', { emissive: '#604629', emissiveIntensity: 0.18 })
+        )
+        marker.position.set(84, 4.75, -102.28)
+        this.group.add(marker)
+    }
 
     animateWater()
     {
