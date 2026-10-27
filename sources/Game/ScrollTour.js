@@ -210,13 +210,13 @@ export class ScrollTour
         // Camera keyframes are offsets from the rider on the road, so the
         // scooter remains in frame through the jungle, waterfall, city and end.
         const establishing = smoothstep(0, 0.12, this.progress)
-        const waterfall = smoothstep(0.42, 0.49, this.progress) * (1 - smoothstep(0.58, 0.66, this.progress))
+        const waterfall = smoothstep(0.54, 0.58, this.progress) * (1 - smoothstep(0.64, 0.70, this.progress))
         const cityReveal = smoothstep(0.68, 0.82, this.progress)
         const finale = smoothstep(0.92, 0.99, this.progress)
 
-        const followDistance = mix(7.8, 4.35, establishing) + waterfall * 1.7 + finale * 4.8
-        const cameraHeight = mix(4.85, 2.45, establishing) + waterfall * 0.95 + cityReveal * 0.25 + finale * 3.15
-        const sideOffset = waterfall * 1.7 - finale * 2.0
+        const followDistance = mix(7.8, 4.35, establishing) + waterfall * 1.6 + finale * 4.8
+        const cameraHeight = mix(4.85, 2.45, establishing) + waterfall * 1.45 + cityReveal * 0.25 + finale * 3.15
+        const sideOffset = waterfall * 3.0 - finale * 2.0
         const lookAhead = mix(5.8, 4.4, establishing) + waterfall * 1.6 + finale * 4.4
 
         this.roadCurve.getPointAt(Math.min(1, this.progress + lookAhead / Math.max(this.roadLength, 1)), this.cameraTarget)
@@ -232,7 +232,7 @@ export class ScrollTour
         this.lookTarget.lerp(this.cameraTarget, immediateUpdate ? 1 : 1 - Math.exp(-delta * 5.2))
         camera.lookAt(this.lookTarget)
 
-        const nextFov = mix(53, 49, finale)
+        const nextFov = mix(53, 49, finale) + waterfall * 3.5
         if(Math.abs(nextFov - this.lastFov) > 0.25)
         {
             camera.fov = nextFov
