@@ -65,8 +65,6 @@ export class ScrollWorld
         this.addLightTrails()
         this.addAmbientParticles()
         this.addStoryBoards()
-        this.addFlyingNote()
-        this.addAirportPamphlet()
 
         // Reuse the renderer-owned ticker for water, particles and light motion.
         this.game.ticker.events.on('tick', () =>
