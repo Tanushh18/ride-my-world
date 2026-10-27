@@ -1055,10 +1055,7 @@ html.is-tour-ready .tour-content .story-section::before
 
 html.is-tour-ready .tour-content .story-inner
 {
-    opacity: 0 !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-    transition: none !important;
+    display: none !important;
 }
 
 html.is-tour-ready .tour-content .section-wash,
