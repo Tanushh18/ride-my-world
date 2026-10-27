@@ -3827,3 +3827,149 @@ html.is-failed .tour-content .story-section:not(.hero-section) .story-inner
         transition: none !important;
     }
 }
+
+
+/* World-first storytelling: let the ride and its physical signboards own the frame. */
+.tour-content .story-section::before
+{
+    background:
+        linear-gradient(90deg, rgba(15, 33, 37, 0.86) 0%, rgba(15, 33, 37, 0.64) 48%, rgba(15, 33, 37, 0.24) 100%),
+        linear-gradient(0deg, rgba(15, 33, 37, 0.34), transparent 42%);
+}
+
+.tour-content .story-inner:not(.hero-inner),
+.tour-content .story-inner-wide
+{
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    padding: clamp(1.1rem, 2.1vw, 1.85rem) 0 !important;
+}
+
+.tour-content .project-card,
+.tour-content .skill-tile,
+.tour-content .experience-entry,
+.tour-content .education-entry,
+.tour-content .certification-entry,
+.tour-content .achievement-card
+{
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+}
+
+.tour-content .project-grid
+{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: clamp(1.4rem, 4vw, 4rem);
+    row-gap: 0;
+}
+
+.tour-content .project-card
+{
+    padding: 1.2rem 0 1.5rem !important;
+    border-bottom: 1px solid rgba(246, 240, 223, 0.24) !important;
+    transform: none !important;
+    transition: opacity 360ms ease, border-color 240ms ease !important;
+}
+
+.tour-content .project-card::before,
+.tour-content .project-card::after
+{
+    display: none !important;
+}
+
+.tour-content .project-card:hover
+{
+    background: transparent !important;
+    box-shadow: none !important;
+    border-color: rgba(242, 184, 121, 0.62) !important;
+    transform: none !important;
+}
+
+.tour-content .skill-grid
+{
+    column-gap: clamp(1.2rem, 3.2vw, 3rem);
+    row-gap: 0;
+}
+
+.tour-content .skill-tile
+{
+    min-height: 0;
+    padding: 1.1rem 0 1.3rem !important;
+    border-bottom: 1px solid rgba(246, 240, 223, 0.2) !important;
+    transition: opacity 260ms ease, border-color 240ms ease !important;
+}
+
+.tour-content .skill-tile:hover
+{
+    transform: none !important;
+    border-color: rgba(142, 214, 192, 0.58) !important;
+    box-shadow: none !important;
+}
+
+.tour-content .experience-entry,
+.tour-content .education-entry,
+.tour-content .certification-entry,
+.tour-content .achievement-card
+{
+    padding: 1.05rem 0 1.2rem !important;
+    border-bottom: 1px solid rgba(246, 240, 223, 0.2) !important;
+}
+
+.loader-track span
+{
+    left: 0;
+    width: var(--loader-progress, 8%);
+    border-radius: inherit;
+    background: linear-gradient(90deg, #8ce8d4, #f8c18d);
+    box-shadow: 0 0 1rem rgba(140, 232, 212, 0.32);
+    animation: none !important;
+    transition: width 620ms cubic-bezier(0.22, 1, 0.36, 1), opacity 240ms ease;
+}
+
+.loader-stage,
+.loader-note
+{
+    transition: opacity 180ms ease, transform 220ms ease;
+}
+
+html.is-ready .cinematic-loader.is-loader-finished
+{
+    will-change: opacity, transform, filter;
+}
+
+@media (max-width: 760px)
+{
+    .tour-content .project-grid
+    {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .tour-content .story-inner:not(.hero-inner),
+    .tour-content .story-inner-wide
+    {
+        padding: 1rem 0 !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce)
+{
+    .loader-track span
+    {
+        transition: none;
+        width: 100%;
+    }
+
+    .tour-content .project-card,
+    .tour-content .skill-tile,
+    .loader-stage,
+    .loader-note
+    {
+        transition: none !important;
+    }
+}
