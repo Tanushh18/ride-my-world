@@ -104,11 +104,20 @@ try
     {
         document.documentElement.style.scrollBehavior = 'auto'
         const projects = document.getElementById('projects')
-        const target = projects.getBoundingClientRect().top + window.scrollY + projects.offsetHeight * 0.62
-        window.scrollTo(0, target)
+        const education = document.getElementById('education')
+        const start = projects.getBoundingClientRect().top + window.scrollY
+        const end = education.getBoundingClientRect().top + window.scrollY
+        // Aim at the midpoint between Projects and Education. ScrollTour maps
+        // that exact interval to the 0.70 sign-focus beat.
+        window.scrollTo(0, start + (end - start) * 0.5)
     })
 
-    await page.waitForFunction(() => window.game.view.scrollTour.progress > 0.66, null, { timeout: 30000 })
+    await page.waitForFunction(() =>
+        window.game.view.scrollTour.progress > 0.685
+        && window.game.view.scrollTour.storyFocusWeight > 0.35,
+        null,
+        { timeout: 30000 }
+    )
 
     const midRide = await page.evaluate(() =>
     {
