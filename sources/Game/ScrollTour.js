@@ -32,6 +32,8 @@ export class ScrollTour
         this.cameraPosition = new THREE.Vector3()
         this.vehicleQuaternion = new THREE.Quaternion()
         this.rollQuaternion = new THREE.Quaternion()
+        this.pointer = { x: 0, y: 0 }
+        this.pointerTarget = { x: 0, y: 0 }
         this.up = new THREE.Vector3(0, 1, 0)
         this.rollAxis = new THREE.Vector3(0, 0, 1)
         this.lastFov = this.game.view.camera.fov
@@ -91,6 +93,17 @@ export class ScrollTour
             this.targetProgress = mix(startStop, endStop, segmentProgress)
         }
 
+        this.onPointerMove = (event) =>
+        {
+            if(event.pointerType === 'touch')
+                return
+
+            this.pointerTarget.x = THREE.MathUtils.clamp((event.clientX / Math.max(1, window.innerWidth) - 0.5) * 2, -1, 1)
+            this.pointerTarget.y = THREE.MathUtils.clamp((event.clientY / Math.max(1, window.innerHeight) - 0.5) * 2, -1, 1)
+            document.documentElement.style.setProperty('--cursor-x', event.clientX + 'px')
+            document.documentElement.style.setProperty('--cursor-y', event.clientY + 'px')
+        }
+
         this.onNavClick = (event) =>
         {
             const link = event.target.closest('[data-nav-target]')
@@ -116,6 +129,8 @@ export class ScrollTour
                     continue
 
                 const chapter = entry.target.dataset.chapter
+                entry.target.classList.add('is-in-view')
+                document.documentElement.dataset.chapter = chapter
                 for(const link of this.navLinks)
                 {
                     const active = link.dataset.navTarget === chapter
@@ -136,6 +151,7 @@ export class ScrollTour
         document.querySelector('.js-tour-nav')?.addEventListener('click', this.onNavClick)
         window.addEventListener('scroll', this.onScroll, { passive: true })
         window.addEventListener('resize', this.onScroll)
+        window.addEventListener('pointermove', this.onPointerMove, { passive: true })
         this.onScroll()
 
         const camera = this.game.view.camera
@@ -207,6 +223,12 @@ export class ScrollTour
 
         this.updateVehicle()
 
+        // A restrained mouse parallax adds depth without changing scroll as the
+        // primary navigation or introducing camera shake.
+        const pointerDamping = immediateUpdate ? 1 : 1 - Math.exp(-delta * 2.4)
+        this.pointer.x += (this.pointerTarget.x - this.pointer.x) * pointerDamping
+        this.pointer.y += (this.pointerTarget.y - this.pointer.y) * pointerDamping
+
         // Camera keyframes are offsets from the rider on the road, so the
         // scooter remains in frame through the jungle, waterfall, city and end.
         const establishing = smoothstep(0, 0.12, this.progress)
@@ -226,6 +248,8 @@ export class ScrollTour
             .addScaledVector(this.tangent, -followDistance)
             .addScaledVector(this.side, sideOffset)
         this.cameraPosition.y = this.routePoint.y + cameraHeight
+        this.cameraPosition.addScaledVector(this.side, this.pointer.x * 0.42)
+        this.cameraPosition.y -= this.pointer.y * 0.16
 
         const cameraDamping = immediateUpdate ? 1 : 1 - Math.exp(-delta * 4.4)
         camera.position.lerp(this.cameraPosition, cameraDamping)
@@ -242,12 +266,14 @@ export class ScrollTour
 
         if(this.progressBar)
             this.progressBar.style.transform = 'scaleX(' + this.targetProgress + ')'
+        document.documentElement.style.setProperty('--ride-progress', this.targetProgress.toFixed(4))
     }
 
     destroy()
     {
         window.removeEventListener('scroll', this.onScroll)
         window.removeEventListener('resize', this.onScroll)
+        window.removeEventListener('pointermove', this.onPointerMove)
         document.querySelector('.js-tour-nav')?.removeEventListener('click', this.onNavClick)
         this.observer?.disconnect()
     }
