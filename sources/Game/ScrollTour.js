@@ -400,8 +400,22 @@ export class ScrollTour
         const cameraEase = focusWeight > 0.72 ? 10.5 : 6.4
         const targetEase = focusWeight > 0.72 ? 12.5 : 7.3
         const cameraDamping = immediateUpdate ? 1 : 1 - Math.exp(-delta * cameraEase)
-        camera.position.lerp(this.cameraPosition, cameraDamping)
-        this.lookTarget.lerp(this.cameraTarget, immediateUpdate ? 1 : 1 - Math.exp(-delta * targetEase))
+        const heldOnBanner = focusStop
+            && this.bannerPauseAt === focusStop.t
+            && focusWeight > 0.999
+
+        if(heldOnBanner)
+        {
+            // The easing has already carried the camera most of the way here.
+            // Lock the final frame to the sign face while the reading pause runs.
+            camera.position.copy(this.cameraPosition)
+            this.lookTarget.copy(this.cameraTarget)
+        }
+        else
+        {
+            camera.position.lerp(this.cameraPosition, cameraDamping)
+            this.lookTarget.lerp(this.cameraTarget, immediateUpdate ? 1 : 1 - Math.exp(-delta * targetEase))
+        }
         camera.lookAt(this.lookTarget)
 
         const sceneFov = mix(53, 49, finale) + waterfall * 3.5 + cityReveal * 1.2 + scenicReveal * 3.4
