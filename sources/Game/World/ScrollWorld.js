@@ -1,9 +1,9 @@
 import * as THREE from 'three/webgpu'
-import { Game } from '../Game.js'
 
 /**
- * Additional landmarks for the scroll tour. This environment is procedural,
- * keeping the repo lightweight and avoiding dependency on external model URLs.
+ * One connected, original low-poly world for the scooter journey.
+ * The route curve is shared by the road, camera, rider, boulevard trees,
+ * city-block placement, and airport approach.
  */
 export class ScrollWorld
 {
@@ -11,8 +11,10 @@ export class ScrollWorld
     {
         this.game = game
         this.group = new THREE.Group()
-        this.group.name = 'ScrollTourWorld'
+        this.group.name = 'CinematicScrollWorld'
         game.scene.add(this.group)
+        this.waterfallStreams = []
+        this.riverMaterial = null
 
         this.roadPoints = [
             [-130, 55], [-118, 42], [-106, 24], [-100, 4],
@@ -21,17 +23,20 @@ export class ScrollWorld
             [43, -56], [60, -67], [76, -79], [91, -90],
             [108, -98], [126, -108]
         ]
-        this.waterfallStreams = []
+
+        const points = this.roadPoints.map(([x, z]) => new THREE.Vector3(x, 0.12, z))
+        this.roadCurve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.18)
+        this.roadLength = this.roadCurve.getLength()
 
         this.addRoad()
+        this.addRoadsideTrees()
         this.addRiverAndWaterfall()
         this.addBridge()
         this.addCity()
         this.addLearningHub()
         this.addAirport()
 
-        // One listener on the existing renderer-owned ticker keeps water
-        // movement synchronized without starting another animation loop.
+        // The existing renderer-owned ticker animates water. No second RAF loop.
         this.game.ticker.events.on('tick', () => { this.animateWater() }, 30)
     }
 
@@ -39,26 +44,34 @@ export class ScrollWorld
     {
         return new THREE.MeshStandardMaterial({
             color,
-            roughness: 0.84,
+            roughness: 0.82,
             metalness: 0.02,
             ...options
         })
     }
 
+    routeFrame(t)
+    {
+        const position = this.roadCurve.getPointAt(THREE.MathUtils.clamp(t, 0, 1))
+        const tangent = this.roadCurve.getTangentAt(THREE.MathUtils.clamp(t, 0, 1)).setY(0).normalize()
+        const side = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize()
+        const yaw = Math.atan2(-tangent.z, tangent.x)
+        return { position, tangent, side, yaw }
+    }
+
     addRoad()
     {
-        const points = this.roadPoints.map(([x, z]) => new THREE.Vector3(x, 0.12, z))
-        this.roadCurve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.18)
-        const samples = this.roadCurve.getPoints(260)
+        const asphalt = this.material('#574750', { roughness: 0.96, side: THREE.DoubleSide })
+        const samples = this.roadCurve.getPoints(420)
         const positions = []
         const indices = []
+        const halfWidth = 4.5
 
         for(let i = 0; i < samples.length; i++)
         {
             const point = samples[i]
             const tangent = this.roadCurve.getTangent(i / (samples.length - 1)).setY(0).normalize()
-            const side = new THREE.Vector3(tangent.z, 0, -tangent.x).normalize()
-            const halfWidth = 4.4
+            const side = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize()
 
             positions.push(
                 point.x + side.x * halfWidth, point.y, point.z + side.z * halfWidth,
@@ -77,342 +90,607 @@ export class ScrollWorld
         geometry.setIndex(indices)
         geometry.computeVertexNormals()
 
-        const road = new THREE.Mesh(geometry, this.material('#35464a', { roughness: 1, side: THREE.DoubleSide }))
+        const road = new THREE.Mesh(geometry, asphalt)
         road.receiveShadow = true
+        road.renderOrder = 1
         this.group.add(road)
 
-        const edgeMaterial = new THREE.LineBasicMaterial({ color: '#e8c88f', transparent: true, opacity: 0.72 })
-        const centerMaterial = new THREE.LineBasicMaterial({ color: '#f6e7bf', transparent: true, opacity: 0.82 })
-
+        const edgeMaterial = new THREE.LineBasicMaterial({ color: '#f1c9a6', transparent: true, opacity: 0.9 })
+        const laneMaterial = new THREE.LineBasicMaterial({ color: '#f7e5c9', transparent: true, opacity: 0.95 })
         for(const sideSign of [-1, 1])
         {
             const edgePoints = []
             for(let i = 0; i < samples.length; i += 2)
             {
                 const tangent = this.roadCurve.getTangent(i / (samples.length - 1)).setY(0).normalize()
-                const side = new THREE.Vector3(tangent.z, 0, -tangent.x).normalize()
-                edgePoints.push(samples[i].clone().addScaledVector(side, sideSign * 4.15).setY(0.16))
+                const side = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize()
+                edgePoints.push(samples[i].clone().addScaledVector(side, sideSign * 4.16).setY(0.16))
             }
-            this.group.add(new THREE.Line(
-                new THREE.BufferGeometry().setFromPoints(edgePoints),
-                edgeMaterial
-            ))
+            this.group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(edgePoints), edgeMaterial))
         }
 
-        const dashPoints = []
-        for(let i = 0; i < samples.length - 1; i += 12)
+        const laneSegments = []
+        for(let i = 0; i < samples.length - 6; i += 13)
         {
-            dashPoints.push(samples[i].clone().setY(0.17))
-            dashPoints.push(samples[Math.min(i + 5, samples.length - 1)].clone().setY(0.17))
+            laneSegments.push(samples[i].clone().setY(0.17))
+            laneSegments.push(samples[i + 5].clone().setY(0.17))
         }
         this.group.add(new THREE.LineSegments(
-            new THREE.BufferGeometry().setFromPoints(dashPoints),
-            centerMaterial
+            new THREE.BufferGeometry().setFromPoints(laneSegments),
+            laneMaterial
         ))
 
-        const curbMaterial = this.material('#c5bd9d')
+        const curbMaterial = this.material('#d8b9a6', { roughness: 0.68 })
         for(const sideSign of [-1, 1])
         {
             const curbPoints = []
-            for(let i = 0; i < samples.length; i += 3)
+            for(let i = 0; i < samples.length; i += 4)
             {
                 const tangent = this.roadCurve.getTangent(i / (samples.length - 1)).setY(0).normalize()
-                const side = new THREE.Vector3(tangent.z, 0, -tangent.x).normalize()
-                curbPoints.push(samples[i].clone().addScaledVector(side, sideSign * 4.55))
+                const side = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize()
+                curbPoints.push(samples[i].clone().addScaledVector(side, sideSign * 4.62).setY(0.12))
             }
-            const curbCurve = new THREE.CatmullRomCurve3(curbPoints)
-            this.group.add(new THREE.Mesh(
-                new THREE.TubeGeometry(curbCurve, 160, 0.07, 5, false),
+
+            const curb = new THREE.Mesh(
+                new THREE.TubeGeometry(new THREE.CatmullRomCurve3(curbPoints), 220, 0.075, 5, false),
                 curbMaterial
-            ))
+            )
+            curb.castShadow = true
+            this.group.add(curb)
+        }
+    }
+
+    addRoadsideTrees()
+    {
+        // Tree rows create a composed boulevard through the forest rather than
+        // relying only on random trees scattered across a large plane.
+        const placements = []
+        let row = 0
+        for(let t = 0.035; t <= 0.62; t += 0.052)
+        {
+            const frame = this.routeFrame(t)
+            for(const sideSign of [-1, 1])
+            {
+                const offset = 10.2 + (row % 3) * 1.2
+                const position = frame.position.clone().addScaledVector(frame.side, sideSign * offset)
+                const scale = 0.78 + ((row * 7) % 5) * 0.095
+                placements.push({ position, scale, row, yaw: frame.yaw })
+                row++
+            }
+        }
+
+        const trunkGeometry = new THREE.CylinderGeometry(0.21, 0.29, 1, 7)
+        const foliageGeometry = new THREE.IcosahedronGeometry(1, 0)
+        const trunkMaterial = this.material('#705044', { roughness: 1 })
+        const canopyMaterials = [
+            this.material('#386e5a', { roughness: 1 }),
+            this.material('#54866a', { roughness: 1 }),
+            this.material('#7e9e70', { roughness: 1 })
+        ]
+
+        const trunks = new THREE.InstancedMesh(trunkGeometry, trunkMaterial, placements.length)
+        const canopyA = canopyMaterials.map(material => new THREE.InstancedMesh(foliageGeometry, material, placements.length))
+        const canopyB = canopyMaterials.map(material => new THREE.InstancedMesh(foliageGeometry, material, placements.length))
+        const dummy = new THREE.Object3D()
+
+        placements.forEach((tree, index) =>
+        {
+            const { x, z } = tree.position
+            const height = 3.5 * tree.scale
+
+            dummy.position.set(x, height * 0.5, z)
+            dummy.rotation.set(0, tree.yaw, 0)
+            dummy.scale.set(tree.scale * 0.25, height, tree.scale * 0.25)
+            dummy.updateMatrix()
+            trunks.setMatrixAt(index, dummy.matrix)
+
+            const tint = index % canopyMaterials.length
+            dummy.position.set(x, height * 0.91, z)
+            dummy.rotation.set(0, tree.yaw, 0)
+            dummy.scale.set(1.42 * tree.scale, 1.58 * tree.scale, 1.34 * tree.scale)
+            dummy.updateMatrix()
+            canopyA[tint].setMatrixAt(index, dummy.matrix)
+
+            dummy.position.set(x + Math.sin(tree.yaw) * 0.25, height * 1.23, z + Math.cos(tree.yaw) * 0.25)
+            dummy.scale.set(1.04 * tree.scale, 1.05 * tree.scale, 1.04 * tree.scale)
+            dummy.updateMatrix()
+            canopyB[tint].setMatrixAt(index, dummy.matrix)
+        })
+
+        trunks.castShadow = true
+        trunks.receiveShadow = true
+        trunks.instanceMatrix.needsUpdate = true
+        trunks.computeBoundingSphere()
+        this.group.add(trunks)
+
+        for(const meshes of [canopyA, canopyB])
+        {
+            meshes.forEach((mesh) =>
+            {
+                mesh.castShadow = true
+                mesh.receiveShadow = true
+                // Leave nonmatching tint instances degenerate instead of adding
+                // one draw call per individual tree.
+                mesh.instanceMatrix.needsUpdate = true
+                mesh.computeBoundingSphere()
+                this.group.add(mesh)
+            })
         }
     }
 
     addRiverAndWaterfall()
     {
-        this.riverMaterial = this.material('#328f99', {
-            roughness: 0.26,
-            metalness: 0.2,
+        this.riverMaterial = this.material('#368f9a', {
+            roughness: 0.22,
+            metalness: 0.16,
             transparent: true,
-            opacity: 0.87
+            opacity: 0.84,
+            side: THREE.DoubleSide,
+            depthWrite: false
         })
-        const river = new THREE.Mesh(new THREE.PlaneGeometry(42, 15), this.riverMaterial)
+
+        const river = new THREE.Mesh(new THREE.PlaneGeometry(48, 16), this.riverMaterial)
         river.rotation.x = -Math.PI / 2
-        river.rotation.y = -0.42
-        river.position.set(8, 0.2, -32)
-        river.receiveShadow = true
+        river.rotation.y = -0.86
+        river.position.set(8, 0.018, -28)
+        river.renderOrder = 0
         this.group.add(river)
 
-        const bankMaterial = this.material('#6d916e')
-        for(const side of [-1, 1])
+        const bankMaterial = this.material('#789477', { roughness: 1 })
+        for(const sideSign of [-1, 1])
         {
-            const bank = new THREE.Mesh(new THREE.BoxGeometry(45, 0.55, 2.3), bankMaterial)
-            bank.position.set(8 + side * 1.2, 0.05, -32 + side * 8.5)
-            bank.rotation.y = -0.42
+            const bank = new THREE.Mesh(new THREE.BoxGeometry(47, 0.55, 1.5), bankMaterial)
+            bank.position.set(8 + sideSign * 2, 0.03, -28 + sideSign * 8.9)
+            bank.rotation.y = -0.86
+            bank.receiveShadow = true
             this.group.add(bank)
         }
 
+        // The falls sit beside the road, not in it; the rider can continue
+        // across the river while the camera briefly opens to the scenery.
         const cliff = new THREE.Mesh(
-            new THREE.BoxGeometry(3.2, 9, 12),
-            this.material('#647b6c')
+            new THREE.BoxGeometry(12, 9.2, 2.8),
+            this.material('#8f7772', { roughness: 1 })
         )
-        cliff.position.set(30, 4.25, -42)
+        cliff.position.set(47, 4.35, -45)
+        cliff.castShadow = true
+        cliff.receiveShadow = true
         this.group.add(cliff)
 
-        for(let i = 0; i < 5; i++)
+        const waterfallFace = new THREE.Mesh(
+            new THREE.PlaneGeometry(10.8, 7.8),
+            new THREE.MeshBasicMaterial({
+                color: '#78d5d2',
+                transparent: true,
+                opacity: 0.14,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            })
+        )
+        waterfallFace.position.set(47, 4.2, -46.45)
+        this.group.add(waterfallFace)
+
+        for(let i = 0; i < 9; i++)
         {
             const stream = new THREE.Mesh(
-                new THREE.PlaneGeometry(0.7 + (i % 2) * 0.28, 6.8 + (i % 3) * 0.6),
+                new THREE.PlaneGeometry(0.55 + (i % 3) * 0.18, 6.5 + (i % 4) * 0.36),
                 new THREE.MeshBasicMaterial({
-                    color: i % 2 ? '#8ee6e0' : '#d1fff0',
+                    color: i % 2 ? '#9fe8e1' : '#dcfff1',
                     transparent: true,
-                    opacity: 0.46,
+                    opacity: 0.44,
                     side: THREE.DoubleSide,
                     depthWrite: false
                 })
             )
-            stream.position.set(28.34, 3.6, -46.4 + i * 1.9)
-            stream.rotation.y = Math.PI / 2
+            stream.position.set(42.1 + i * 1.22, 3.5 + (i % 3) * 0.1, -46.48)
             this.group.add(stream)
             this.waterfallStreams.push(stream)
         }
 
         const mistMaterial = new THREE.MeshBasicMaterial({
-            color: '#d8fff1',
+            color: '#d5fff1',
             transparent: true,
-            opacity: 0.14,
+            opacity: 0.12,
             depthWrite: false
         })
-        for(let i = 0; i < 8; i++)
+        for(let i = 0; i < 12; i++)
         {
-            const mist = new THREE.Mesh(new THREE.SphereGeometry(1.1 + (i % 3) * 0.35, 8, 6), mistMaterial)
-            mist.position.set(27.7 + (i % 3) * 0.35, 0.6 + (i % 4) * 0.14, -42 + i * 1.15)
-            mist.scale.y = 0.45
+            const mist = new THREE.Mesh(new THREE.SphereGeometry(0.8 + (i % 4) * 0.2, 8, 6), mistMaterial)
+            mist.position.set(41.5 + (i % 4) * 2.7, 0.45 + (i % 3) * 0.12, -44.2 + Math.floor(i / 4) * 0.65)
+            mist.scale.y = 0.48
             this.group.add(mist)
         }
     }
 
     addBridge()
     {
-        const deck = new THREE.Mesh(
-            new THREE.BoxGeometry(18, 0.45, 8.8),
-            this.material('#9a9c8f')
-        )
-        deck.position.set(8, 0.3, -27)
-        deck.rotation.y = 0.78
-        deck.receiveShadow = true
-        this.group.add(deck)
+        const frame = this.routeFrame(0.49)
+        const bridge = new THREE.Group()
+        bridge.position.set(frame.position.x, 0.08, frame.position.z)
+        bridge.rotation.y = frame.yaw
 
-        const railMaterial = this.material('#e3c48e', { metalness: 0.12 })
-        for(const side of [-1, 1])
+        const deck = new THREE.Mesh(
+            new THREE.BoxGeometry(18, 0.18, 8.8),
+            this.material('#b98c82', { roughness: 0.76 })
+        )
+        deck.position.y = 0
+        deck.receiveShadow = true
+        bridge.add(deck)
+
+        const railMaterial = this.material('#f1c6a6', { roughness: 0.65 })
+        const railTop = this.material('#8e5957', { roughness: 0.7 })
+        for(const sideSign of [-1, 1])
         {
-            const rail = new THREE.Mesh(new THREE.BoxGeometry(18, 0.7, 0.16), railMaterial)
-            rail.position.set(8, 0.78, -27 + side * 4.25)
-            rail.rotation.y = 0.78
-            this.group.add(rail)
+            const rail = new THREE.Mesh(new THREE.BoxGeometry(18, 0.54, 0.14), railMaterial)
+            rail.position.set(0, 0.46, sideSign * 4.25)
+            rail.castShadow = true
+            bridge.add(rail)
+
+            const top = new THREE.Mesh(new THREE.BoxGeometry(18, 0.11, 0.24), railTop)
+            top.position.set(0, 0.78, sideSign * 4.25)
+            bridge.add(top)
+
+            for(let i = 0; i < 7; i++)
+            {
+                const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.65, 0.12), railMaterial)
+                post.position.set(-8.1 + i * 2.7, 0.42, sideSign * 4.25)
+                bridge.add(post)
+            }
         }
+        bridge.traverse(node =>
+        {
+            if(node.isMesh)
+            {
+                node.castShadow = true
+                node.receiveShadow = true
+            }
+        })
+        this.group.add(bridge)
     }
 
     addCity()
     {
-        const facade = [
-            this.material('#50696b'),
-            this.material('#40575f'),
-            this.material('#657d7b'),
-            this.material('#364b55')
+        const facades = [
+            this.material('#c9837e', { roughness: 0.87 }),
+            this.material('#df9f8e', { roughness: 0.87 }),
+            this.material('#b8787b', { roughness: 0.87 }),
+            this.material('#ad8b9b', { roughness: 0.87 }),
+            this.material('#e2ad98', { roughness: 0.87 }),
+            this.material('#b98784', { roughness: 0.87 })
         ]
-        const glass = this.material('#a4d9d1', {
+        const roofMaterials = [
+            this.material('#8f626a', { roughness: 0.8 }),
+            this.material('#c47d75', { roughness: 0.8 }),
+            this.material('#826d83', { roughness: 0.8 })
+        ]
+        const baseMaterials = [
+            this.material('#835d65', { roughness: 0.92 }),
+            this.material('#a16c6c', { roughness: 0.92 }),
+            this.material('#896c7c', { roughness: 0.92 })
+        ]
+        const windowMaterial = this.material('#ffe0b6', {
             roughness: 0.32,
-            metalness: 0.12,
-            emissive: '#244c4c',
-            emissiveIntensity: 0.18
+            metalness: 0.1,
+            emissive: '#9b6045',
+            emissiveIntensity: 0.32
         })
 
-        // Keep the existing project plaza around (62, -62) unobstructed.
-        // The denser skyline begins beyond it, toward the airport approach.
-        const blocks = [
-            [99, -52, 8, 17, 8], [113, -60, 10, 25, 8], [139, -54, 9, 20, 10],
-            [99, -72, 12, 31, 10], [114, -82, 9, 23, 8], [141, -76, 11, 38, 11],
-            [99, -93, 8, 29, 9], [145, -91, 10, 26, 10], [99, -111, 8, 16, 9],
-            [146, -112, 9, 22, 8], [96, -126, 9, 19, 8], [143, -130, 10, 24, 9]
+        // Paired buildings sit outside the driving corridor. Their orientation
+        // follows the road tangent, creating a boulevard instead of box clutter.
+        const stations = [
+            { t: 0.80, offset: 30, side: -1, width: 9, depth: 10, height: 18 },
+            { t: 0.80, offset: 30, side: 1, width: 10, depth: 9, height: 24 },
+            { t: 0.84, offset: 25, side: -1, width: 11, depth: 10, height: 27 },
+            { t: 0.84, offset: 25, side: 1, width: 9, depth: 10, height: 20 },
+            { t: 0.88, offset: 21, side: -1, width: 10, depth: 11, height: 32 },
+            { t: 0.88, offset: 21, side: 1, width: 12, depth: 9, height: 22 },
+            { t: 0.92, offset: 19, side: -1, width: 9, depth: 10, height: 25 },
+            { t: 0.92, offset: 19, side: 1, width: 11, depth: 11, height: 36 },
+            { t: 0.96, offset: 21, side: -1, width: 11, depth: 9, height: 28 },
+            { t: 0.96, offset: 21, side: 1, width: 10, depth: 12, height: 33 },
+            { t: 0.99, offset: 24, side: -1, width: 12, depth: 10, height: 24 },
+            { t: 0.99, offset: 24, side: 1, width: 10, depth: 10, height: 29 }
         ]
 
-        const windowGeometry = new THREE.BoxGeometry(0.38, 0.52, 0.08)
-        const litWindows = new THREE.InstancedMesh(windowGeometry, glass, 520)
-        const dummy = new THREE.Object3D()
-        let index = 0
-
-        for(let buildingIndex = 0; buildingIndex < blocks.length; buildingIndex++)
+        const windowGeometry = new THREE.BoxGeometry(0.48, 0.62, 0.075)
+        const windows = []
+        stations.forEach((building, buildingIndex) =>
         {
-            const [x, z, width, height, depth] = blocks[buildingIndex]
-            const building = new THREE.Mesh(
-                new THREE.BoxGeometry(width, height, depth),
-                facade[buildingIndex % facade.length]
+            const frame = this.routeFrame(building.t)
+            const centre = frame.position.clone().addScaledVector(frame.side, building.side * building.offset)
+            const assembly = new THREE.Group()
+            assembly.position.set(centre.x, 0, centre.z)
+            assembly.rotation.y = frame.yaw
+
+            const facade = new THREE.Mesh(
+                new THREE.BoxGeometry(building.width, building.height, building.depth),
+                facades[buildingIndex % facades.length]
             )
-            building.position.set(x, height / 2, z)
-            building.castShadow = true
-            building.receiveShadow = true
-            this.group.add(building)
+            facade.position.y = building.height / 2
+            facade.castShadow = true
+            facade.receiveShadow = true
+            assembly.add(facade)
 
-            const floors = Math.floor(height / 3.3)
-            for(let floor = 1; floor < floors; floor++)
+            const base = new THREE.Mesh(
+                new THREE.BoxGeometry(building.width + 0.12, 3.2, building.depth + 0.12),
+                baseMaterials[buildingIndex % baseMaterials.length]
+            )
+            base.position.y = 1.6
+            base.castShadow = true
+            assembly.add(base)
+
+            const roof = new THREE.Mesh(
+                new THREE.BoxGeometry(building.width + 0.7, 0.36, building.depth + 0.7),
+                roofMaterials[buildingIndex % roofMaterials.length]
+            )
+            roof.position.y = building.height + 0.18
+            roof.castShadow = true
+            assembly.add(roof)
+
+            for(let floor = 1; floor < Math.floor(building.height / 3.35); floor++)
             {
-                for(let windowIndex = 0; windowIndex < Math.max(2, Math.floor(width / 1.6)); windowIndex++)
-                {
-                    if(index >= 520)
-                        break
+                const ledge = new THREE.Mesh(
+                    new THREE.BoxGeometry(building.width + 0.22, 0.095, building.depth + 0.22),
+                    roofMaterials[buildingIndex % roofMaterials.length]
+                )
+                ledge.position.y = floor * 3.35
+                assembly.add(ledge)
 
-                    const wx = x - width / 2 + 0.8 + windowIndex * 1.5
-                    const wy = floor * 3.05
-                    dummy.position.set(wx, wy, z + depth / 2 + 0.045)
-                    dummy.scale.set(1, 1, 1)
-                    dummy.updateMatrix()
-                    litWindows.setMatrixAt(index++, dummy.matrix)
+                for(let wx = -building.width / 2 + 1.15, column = 0; wx < building.width / 2 - 0.3; wx += 1.55, column++)
+                {
+                    if((floor + column + buildingIndex) % 5 === 0)
+                        continue
+
+                    // On whichever facade faces the road, preserving actual
+                    // world-space transforms in one instanced window draw call.
+                    const zFace = -building.side * (building.depth / 2 + 0.055)
+                    const local = new THREE.Vector3(wx, floor * 3.35 + 0.25, zFace)
+                        .applyAxisAngle(new THREE.Vector3(0, 1, 0), frame.yaw)
+                    windows.push({
+                        position: new THREE.Vector3(centre.x + local.x, local.y, centre.z + local.z),
+                        yaw: frame.yaw
+                    })
                 }
             }
-        }
 
-        litWindows.count = index
-        litWindows.instanceMatrix.needsUpdate = true
-        litWindows.computeBoundingSphere()
-        this.group.add(litWindows)
+            this.group.add(assembly)
+        })
 
-        const lampMaterial = new THREE.MeshBasicMaterial({ color: '#ffd48e' })
-        for(const [x, z] of [[36, -58], [53, -71], [70, -83], [88, -94], [108, -101]])
+        const windowInstances = new THREE.InstancedMesh(windowGeometry, windowMaterial, windows.length)
+        const dummy = new THREE.Object3D()
+        windows.forEach((window, index) =>
         {
-            const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 3.5, 6), this.material('#d4c6a2'))
-            pole.position.set(x, 1.75, z)
-            this.group.add(pole)
+            dummy.position.copy(window.position)
+            dummy.rotation.set(0, window.yaw, 0)
+            dummy.scale.set(1, 1, 1)
+            dummy.updateMatrix()
+            windowInstances.setMatrixAt(index, dummy.matrix)
+        })
+        windowInstances.instanceMatrix.needsUpdate = true
+        windowInstances.computeBoundingSphere()
+        this.group.add(windowInstances)
 
-            const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.27, 8, 6), lampMaterial)
-            lamp.position.set(x, 3.55, z)
-            this.group.add(lamp)
+        this.addStreetLights()
+    }
+
+    addStreetLights()
+    {
+        const poleMaterial = this.material('#5c4b57', { roughness: 0.75, metalness: 0.18 })
+        const lampMaterial = new THREE.MeshBasicMaterial({ color: '#ffd7a0' })
+        const haloMaterial = new THREE.MeshBasicMaterial({
+            color: '#ffca8a',
+            transparent: true,
+            opacity: 0.12,
+            depthWrite: false
+        })
+
+        for(const t of [0.79, 0.835, 0.88, 0.925, 0.97, 0.99])
+        {
+            const frame = this.routeFrame(t)
+            for(const sideSign of [-1, 1])
+            {
+                const position = frame.position.clone().addScaledVector(frame.side, sideSign * 6.6)
+                const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.1, 3.35, 7), poleMaterial)
+                pole.position.set(position.x, 1.68, position.z)
+                pole.castShadow = true
+                this.group.add(pole)
+
+                const arm = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.075, 0.075), poleMaterial)
+                arm.position.set(position.x - frame.side.x * sideSign * 0.42, 3.25, position.z - frame.side.z * sideSign * 0.42)
+                arm.rotation.y = frame.yaw
+                this.group.add(arm)
+
+                const lightX = position.x - frame.side.x * sideSign * 0.72
+                const lightZ = position.z - frame.side.z * sideSign * 0.72
+                const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), lampMaterial)
+                bulb.position.set(lightX, 3.18, lightZ)
+                this.group.add(bulb)
+
+                const halo = new THREE.Mesh(new THREE.SphereGeometry(0.48, 8, 6), haloMaterial)
+                halo.position.copy(bulb.position)
+                this.group.add(halo)
+            }
         }
     }
 
-
-
     addLearningHub()
     {
-        // A quiet library/campus landmark connects the city tour with the
-        // education and learning chapter without pretending to be a real school.
-        const stone = this.material('#b9bba6', { roughness: 0.7 })
-        const roofMaterial = this.material('#385b58', { roughness: 0.55 })
-        const glass = this.material('#94d6cb', {
+        // A campus/library-like landmark near the education chapter, not a
+        // claimed real institution or a logo rendered into the world.
+        const frame = this.routeFrame(0.845)
+        const position = frame.position.clone().addScaledVector(frame.side, -31)
+        const campus = new THREE.Group()
+        campus.position.set(position.x, 0, position.z)
+        campus.rotation.y = frame.yaw
+
+        const stone = this.material('#e3c4ae', { roughness: 0.78 })
+        const roofMaterial = this.material('#7c5c70', { roughness: 0.74 })
+        const glass = this.material('#9dd6d0', {
             roughness: 0.28,
             metalness: 0.12,
             emissive: '#285653',
-            emissiveIntensity: 0.2
+            emissiveIntensity: 0.22
         })
 
-        const mainBuilding = new THREE.Mesh(new THREE.BoxGeometry(16, 5.4, 9), stone)
-        mainBuilding.position.set(84, 2.7, -107)
-        mainBuilding.castShadow = true
-        mainBuilding.receiveShadow = true
-        this.group.add(mainBuilding)
+        const main = new THREE.Mesh(new THREE.BoxGeometry(16, 5.6, 10), stone)
+        main.position.y = 2.8
+        main.castShadow = true
+        main.receiveShadow = true
+        campus.add(main)
 
-        const roof = new THREE.Mesh(new THREE.BoxGeometry(17.5, 0.55, 10.5), roofMaterial)
-        roof.position.set(84, 5.65, -107)
-        this.group.add(roof)
+        const wing = new THREE.Mesh(new THREE.BoxGeometry(7, 4.2, 8.4), this.material('#bd8c8a'))
+        wing.position.set(-11.2, 2.1, 0.4)
+        wing.castShadow = true
+        campus.add(wing)
 
-        const frontGlass = new THREE.Mesh(new THREE.BoxGeometry(13.5, 2.6, 0.14), glass)
-        frontGlass.position.set(84, 2.8, -102.42)
-        this.group.add(frontGlass)
+        const roof = new THREE.Mesh(new THREE.BoxGeometry(17.2, 0.5, 11.2), roofMaterial)
+        roof.position.y = 5.85
+        campus.add(roof)
 
-        const steps = new THREE.Mesh(new THREE.BoxGeometry(10, 0.25, 2.1), stone)
-        steps.position.set(84, 0.15, -100.7)
-        this.group.add(steps)
+        const frontGlass = new THREE.Mesh(new THREE.BoxGeometry(13.5, 2.7, 0.13), glass)
+        frontGlass.position.set(0, 2.9, -5.08)
+        campus.add(frontGlass)
 
-        const pillarGeometry = new THREE.CylinderGeometry(0.22, 0.28, 4.2, 8)
-        for(const x of [78.5, 82.2, 85.8, 89.5])
+        const stepsMaterial = this.material('#c9a08e', { roughness: 0.82 })
+        for(let i = 0; i < 3; i++)
         {
-            const pillar = new THREE.Mesh(pillarGeometry, stone)
-            pillar.position.set(x, 2.6, -102.15)
-            pillar.castShadow = true
-            this.group.add(pillar)
+            const steps = new THREE.Mesh(new THREE.BoxGeometry(9.5 - i * 1.1, 0.17, 1.1), stepsMaterial)
+            steps.position.set(0, 0.08 + i * 0.17, -6.1 - i * 0.85)
+            campus.add(steps)
         }
 
-        const marker = new THREE.Mesh(
-            new THREE.BoxGeometry(2.8, 0.5, 0.16),
-            this.material('#f2b879', { emissive: '#604629', emissiveIntensity: 0.18 })
+        const pillarGeometry = new THREE.CylinderGeometry(0.2, 0.25, 4.2, 8)
+        for(const x of [-5.2, -1.75, 1.75, 5.2])
+        {
+            const pillar = new THREE.Mesh(pillarGeometry, stone)
+            pillar.position.set(x, 2.5, -5.5)
+            pillar.castShadow = true
+            campus.add(pillar)
+        }
+
+        const sign = new THREE.Mesh(
+            new THREE.BoxGeometry(3.4, 0.42, 0.15),
+            this.material('#edb47e', { emissive: '#5b3525', emissiveIntensity: 0.2 })
         )
-        marker.position.set(84, 4.75, -102.28)
-        this.group.add(marker)
+        sign.position.set(0, 4.75, -5.18)
+        campus.add(sign)
+
+        campus.traverse(node =>
+        {
+            if(node.isMesh)
+            {
+                node.castShadow = true
+                node.receiveShadow = true
+            }
+        })
+        this.group.add(campus)
+    }
+
+    addAirport()
+    {
+        const end = this.routeFrame(1)
+        const runwayCentre = end.position.clone().addScaledVector(end.tangent, 34)
+        runwayCentre.y = 0.035
+
+        const runway = new THREE.Group()
+        runway.position.copy(runwayCentre)
+        runway.rotation.y = end.yaw
+
+        const asphalt = new THREE.Mesh(
+            new THREE.PlaneGeometry(58, 12),
+            this.material('#514d5a', { roughness: 0.95, side: THREE.DoubleSide })
+        )
+        asphalt.rotation.x = -Math.PI / 2
+        asphalt.position.y = 0
+        runway.add(asphalt)
+
+        const marking = new THREE.MeshBasicMaterial({ color: '#f5e5ca' })
+        const edgeMarkings = [
+            { z: -5.35, x: 0 }, { z: 5.35, x: 0 }
+        ]
+        edgeMarkings.forEach(mark =>
+        {
+            const line = new THREE.Mesh(new THREE.BoxGeometry(56, 0.025, 0.12), marking)
+            line.position.set(0, 0.035, mark.z)
+            runway.add(line)
+        })
+
+        for(let i = 0; i < 9; i++)
+        {
+            const stripe = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.03, 0.22), marking)
+            stripe.position.set(-24 + i * 6, 0.04, 0)
+            runway.add(stripe)
+        }
+        this.group.add(runway)
+
+        const terminalCentre = end.position.clone()
+            .addScaledVector(end.side, 25)
+            .addScaledVector(end.tangent, 5)
+        const terminal = new THREE.Group()
+        terminal.position.set(terminalCentre.x, 0, terminalCentre.z)
+        terminal.rotation.y = end.yaw
+
+        const shell = this.material('#e6c7b3', { roughness: 0.55, metalness: 0.04 })
+        const roofMaterial = this.material('#805f71', { roughness: 0.62, metalness: 0.08 })
+        const glass = this.material('#8fd5d0', {
+            roughness: 0.22,
+            metalness: 0.2,
+            emissive: '#1f4e54',
+            emissiveIntensity: 0.24
+        })
+
+        const main = new THREE.Mesh(new THREE.BoxGeometry(25, 7.1, 11), shell)
+        main.position.y = 3.55
+        main.castShadow = true
+        terminal.add(main)
+
+        const roof = new THREE.Mesh(new THREE.BoxGeometry(27, 0.5, 12.5), roofMaterial)
+        roof.position.y = 7.35
+        terminal.add(roof)
+
+        const facade = new THREE.Mesh(new THREE.BoxGeometry(22, 2.5, 0.14), glass)
+        facade.position.set(0, 3.6, -5.57)
+        terminal.add(facade)
+
+        const canopy = new THREE.Mesh(new THREE.BoxGeometry(26, 0.28, 2.1), roofMaterial)
+        canopy.position.set(0, 5.35, -6.2)
+        terminal.add(canopy)
+
+        const tower = new THREE.Mesh(new THREE.BoxGeometry(4.3, 17, 4.3), this.material('#bd9290', { roughness: 0.68 }))
+        tower.position.set(13.6, 8.5, 2.3)
+        tower.castShadow = true
+        terminal.add(tower)
+
+        const towerGlass = new THREE.Mesh(new THREE.BoxGeometry(4.0, 1.65, 4.0), glass)
+        towerGlass.position.set(13.6, 15.1, 2.3)
+        terminal.add(towerGlass)
+
+        const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.26, 8, 6), new THREE.MeshBasicMaterial({ color: '#ffd69a' }))
+        beacon.position.set(13.6, 17.4, 2.3)
+        terminal.add(beacon)
+
+        terminal.traverse(node =>
+        {
+            if(node.isMesh)
+            {
+                node.castShadow = true
+                node.receiveShadow = true
+            }
+        })
+        this.group.add(terminal)
     }
 
     animateWater()
     {
         const time = this.game.ticker.elapsed
 
-        // Tiny material and stream changes suggest moving water without a
-        // costly full fluid simulation or a second render loop.
         if(this.riverMaterial)
-            this.riverMaterial.opacity = 0.84 + Math.sin(time * 0.9) * 0.025
+            this.riverMaterial.opacity = 0.82 + Math.sin(time * 0.8) * 0.025
 
         this.waterfallStreams.forEach((stream, index) =>
         {
-            stream.position.y = 3.6 + Math.sin(time * 2.1 + index * 0.7) * 0.13
-            stream.material.opacity = 0.42 + Math.sin(time * 1.7 + index) * 0.045
+            stream.position.y = 3.5 + (index % 3) * 0.1 + Math.sin(time * 2.0 + index * 0.62) * 0.13
+            stream.material.opacity = 0.4 + Math.sin(time * 1.8 + index) * 0.055
         })
-    }
-
-    addAirport()
-    {
-        const terminal = new THREE.Mesh(
-            new THREE.BoxGeometry(28, 7, 12),
-            this.material('#b7c3b3', { roughness: 0.42, metalness: 0.08 })
-        )
-        terminal.position.set(126, 3.5, -112)
-        terminal.castShadow = true
-        this.group.add(terminal)
-
-        const glass = this.material('#8bd5d0', {
-            roughness: 0.22,
-            metalness: 0.16,
-            emissive: '#244d50',
-            emissiveIntensity: 0.25
-        })
-        const windowBand = new THREE.Mesh(new THREE.BoxGeometry(28.1, 2.5, 0.16), glass)
-        windowBand.position.set(126, 3.7, -105.9)
-        this.group.add(windowBand)
-
-        const roof = new THREE.Mesh(
-            new THREE.BoxGeometry(31, 0.55, 14.5),
-            this.material('#52666a')
-        )
-        roof.position.set(126, 7.2, -112)
-        this.group.add(roof)
-
-        const tower = new THREE.Mesh(
-            new THREE.BoxGeometry(5, 18, 5),
-            this.material('#6e8784')
-        )
-        tower.position.set(141, 9, -105)
-        this.group.add(tower)
-
-        const beacon = new THREE.Mesh(
-            new THREE.SphereGeometry(0.32, 10, 8),
-            new THREE.MeshBasicMaterial({ color: '#ffd48e' })
-        )
-        beacon.position.set(141, 18.5, -105)
-        this.group.add(beacon)
-
-        const runway = new THREE.Mesh(
-            new THREE.PlaneGeometry(48, 9),
-            this.material('#3e5052', { roughness: 1, side: THREE.DoubleSide })
-        )
-        runway.rotation.x = -Math.PI / 2
-        runway.rotation.z = -0.5
-        runway.position.set(139, 0.08, -126)
-        this.group.add(runway)
-
-        const stripeMaterial = new THREE.MeshBasicMaterial({ color: '#e4d8b8' })
-        for(let i = 0; i < 6; i++)
-        {
-            const stripe = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.035, 0.22), stripeMaterial)
-            stripe.position.set(122 + i * 5.5, 0.12, -126 - i * 2.9)
-            stripe.rotation.y = -0.5
-            this.group.add(stripe)
-        }
     }
 }
