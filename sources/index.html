@@ -3,33 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Muhammad Mubazar Qureshi</title>
+    <meta name="theme-color" content="#172b32">
+    <title>Tanushh18 — Ride My World</title>
+    <meta name="description" content="An interactive 3D portfolio by Tanushh18. Drive through a living world and discover projects in full-stack engineering, automation, and AI.">
     <link rel="icon" type="image/svg+xml" href="./favicon.svg">
-    <meta name="description" content="Interactive 3D portfolio of Muhammad Mubazar Qureshi, senior full stack software engineer.">
 </head>
 <body>
     <div class="game js-game">
-        <canvas class="canvas js-canvas"></canvas>
+        <canvas class="canvas js-canvas" aria-label="Interactive 3D portfolio world"></canvas>
     </div>
 
+    <header class="masthead" aria-label="Portfolio navigation">
+        <a class="brand" href="#" aria-label="Tanushh18 portfolio home">
+            <span class="brand-symbol">T<span>.</span></span>
+            <span class="brand-copy">
+                <strong>TANUSHH18</strong>
+                <small>DEVELOPER · BUILDER</small>
+            </span>
+        </a>
+
+        <div class="nav-status">
+            <span class="status-dot"></span>
+            <span>INTERACTIVE PORTFOLIO</span>
+        </div>
+
+        <a class="github-link" href="https://github.com/Tanushh18" target="_blank" rel="noopener noreferrer">
+            <span>GitHub</span>
+            <span aria-hidden="true">↗</span>
+        </a>
+    </header>
+
     <div class="loader">
-        <div class="loader-title">Loading</div>
+        <div class="loader-mark">T<span>.</span></div>
+        <div class="loader-title">Building your world</div>
+        <div class="loader-track"><span></span></div>
+        <p class="loader-note">Loading the road less ordinary</p>
     </div>
 
     <div class="failure">
+        <div class="failure-mark">!</div>
         <div class="failure-title">This world could not start</div>
         <p class="failure-message js-error-message"></p>
+        <p class="failure-help">Try the latest version of Chrome or Edge with hardware acceleration enabled.</p>
     </div>
 
-    <div class="hint">
+    <div class="hint" aria-label="Keyboard driving controls">
         <span class="key">W A S D</span> drive
-        <span class="key">Shift</span> boost
-        <span class="key">Ctrl</span> brake
+        <span class="key">SHIFT</span> boost
+        <span class="key">CTRL / B</span> brake
         <span class="key">R</span> respawn
-        <span class="key">Drag</span> camera
+        <span class="key">DRAG</span> look around
     </div>
 
-    <aside class="card js-card" aria-live="polite">
+    <aside class="card js-card" aria-live="polite" aria-label="Project details">
         <div class="card-head">
             <span class="card-year js-card-year"></span>
             <span class="card-role js-card-role"></span>
@@ -39,6 +65,75 @@
         <ul class="card-tags js-card-tags"></ul>
         <div class="card-links js-card-links"></div>
     </aside>
+
+    <section class="intro-screen" aria-label="Welcome to the portfolio">
+        <div class="intro-grid" aria-hidden="true"></div>
+        <div class="intro-content">
+            <p class="eyebrow"><span>01</span> PERSONAL PORTFOLIO / 2026</p>
+            <h1>Building the<br>digital <em>world.</em></h1>
+            <p class="intro-description">
+                I'm Tanushh18 — a developer building full-stack products, automation,
+                and AI-powered tools. Take a drive through my work and discover what I'm building.
+            </p>
+            <div class="intro-actions">
+                <button class="enter-button js-enter-world" type="button">
+                    <span>Start the ride</span>
+                    <span class="button-arrow" aria-hidden="true">↗</span>
+                </button>
+                <a class="source-link" href="https://github.com/Tanushh18/ride-my-world" target="_blank" rel="noopener noreferrer">
+                    Explore the code <span aria-hidden="true">↗</span>
+                </a>
+            </div>
+            <div class="control-caption">
+                <span class="key">W A S D</span><span>DRIVE</span>
+                <span class="key">SHIFT</span><span>BOOST</span>
+                <span class="key">DRAG</span><span>LOOK AROUND</span>
+            </div>
+        </div>
+
+        <div class="intro-art" aria-hidden="true">
+            <div class="orbit orbit-outer"></div>
+            <div class="orbit orbit-inner"></div>
+            <div class="orbit-center"><span>T<span>.</span></span></div>
+            <span class="orbit-label orbit-label-top">BUILD / LEARN / SHIP</span>
+            <span class="orbit-label orbit-label-bottom">TURN IDEAS INTO THINGS</span>
+            <span class="orbit-point"></span>
+        </div>
+
+        <div class="intro-bottom">
+            <span>WEBGL EXPERIENCE</span>
+            <span>DESIGNED TO BE EXPLORED</span>
+            <span>© 2026 · TANUSHH18</span>
+        </div>
+    </section>
+
+    <footer class="world-footer">
+        <div class="world-index">
+            <span class="footer-number">01</span>
+            <span class="footer-copy">
+                <strong>RIDE TO DISCOVER</strong>
+                <small>Approach a landmark to reveal a project</small>
+            </span>
+        </div>
+        <div class="footer-center">THE ROAD IS THE PORTFOLIO</div>
+        <div class="footer-keys"><span class="key">W A S D</span><span>MOVE</span></div>
+    </footer>
+
+    <div class="touch-controls" aria-label="Touch driving controls">
+        <div class="touch-pad">
+            <button class="touch-key touch-up" type="button" data-key="KeyW" aria-label="Accelerate">▲</button>
+            <div class="touch-pad-row">
+                <button class="touch-key" type="button" data-key="KeyA" aria-label="Steer left">◀</button>
+                <button class="touch-key" type="button" data-key="KeyS" aria-label="Reverse">▼</button>
+                <button class="touch-key" type="button" data-key="KeyD" aria-label="Steer right">▶</button>
+            </div>
+        </div>
+        <div class="touch-actions">
+            <button class="touch-action touch-boost" type="button" data-key="ShiftLeft">BOOST</button>
+            <button class="touch-action" type="button" data-key="ControlLeft">BRAKE</button>
+            <button class="touch-action" type="button" data-press="KeyR">RESET</button>
+        </div>
+    </div>
 
     <script type="module" src="./index.js"></script>
 </body>
