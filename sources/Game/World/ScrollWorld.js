@@ -1221,9 +1221,9 @@ export class ScrollWorld
             const frame = this.routeFrame(item.t)
             const sign = new THREE.Group()
             sign.name = 'StoryBoard_' + String(index + 1).padStart(2, '0')
-            sign.position.copy(frame.position).addScaledVector(frame.side, item.side * 11.1)
+            sign.position.copy(frame.position).addScaledVector(frame.side, item.side * 8.25)
             sign.position.y = 3.48
-            sign.rotation.y = frame.yaw + (item.side > 0 ? Math.PI : 0)
+            sign.rotation.y = frame.yaw - Math.PI / 2
 
             const backing = new THREE.Mesh(panelGeometry, backingMaterial)
             backing.castShadow = true
@@ -1379,13 +1379,13 @@ export class ScrollWorld
         this.paperNote.shadowMaterial.opacity = visible * 0.13
         this.paperNote.group.visible = visible > 0.005
 
-        const t = THREE.MathUtils.clamp(progress + 0.035, 0.01, 0.99)
+        const t = THREE.MathUtils.clamp(progress + 0.015, 0.01, 0.99)
         const frame = this.routeFrame(t)
         const wind = reducedMotion ? 0 : time
         this.paperNote.group.position.copy(frame.position)
-            .addScaledVector(frame.tangent, 2.5 + Math.sin(wind * 1.05) * 0.9)
-            .addScaledVector(frame.side, Math.sin(wind * 0.82) * 2.6 - 3.2)
-        this.paperNote.group.position.y = frame.position.y + 2.85 + (reducedMotion ? 0 : Math.sin(time * 1.7) * 0.27)
+            .addScaledVector(frame.tangent, 1.0 + Math.sin(wind * 1.05) * 0.65)
+            .addScaledVector(frame.side, Math.sin(wind * 0.82) * 1.9 - 2.7)
+        this.paperNote.group.position.y = frame.position.y + 2.12 + (reducedMotion ? 0 : Math.sin(time * 1.7) * 0.2)
         this.paperNote.group.rotation.set(
             reducedMotion ? 0 : Math.sin(time * 0.7) * 0.08,
             frame.yaw - Math.PI / 2,
