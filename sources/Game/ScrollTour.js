@@ -280,6 +280,9 @@ export class ScrollTour
             }
         }
 
+        this.storyFocusWeight = focusWeight
+        this.storyFocusStop = focusStop?.t ?? null
+
         // Hold the wider scene for context, then settle on the nearby sign at
         // near eye level. Both the pan and the zoom follow the scroll easing.
         const followDistance = mix(baseFollowDistance, baseFollowDistance + 0.9, focusWeight)
