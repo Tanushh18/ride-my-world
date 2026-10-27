@@ -1404,31 +1404,31 @@ export class ScrollWorld
         // Physical roadside signs bring compact chapter summaries into view.
         const boards = [
             {
-                t: 0.025, side: -1, kicker: '01 / THE BEGINNING',
+                t: 0.025, side: 1, kicker: '01 / THE BEGINNING',
                 title: portfolio.name.toUpperCase(),
                 lines: [portfolio.roleLine.replaceAll(' · ', '  /  '), portfolio.location + '  ·  Scroll to ride through my work'],
                 footer: 'BUILD  /  ANALYSE  /  SHIP', accent: '#cc805e'
             },
             {
-                t: 0.13, side: 1, kicker: '02 / THE PERSON BEHIND THE BUILD',
+                t: 0.13, side: -1, kicker: '02 / THE PERSON BEHIND THE BUILD',
                 title: 'AI. DATA. SYSTEMS.',
                 lines: ['Machine learning, analytics and backend engineering.', portfolio.about.note],
                 footer: 'CURIOSITY → USEFUL SOFTWARE', accent: '#3a9a8a'
             },
             {
-                t: 0.275, side: -1, kicker: '03 / TOOLS OF THE TRADE',
+                t: 0.275, side: 1, kicker: '03 / TOOLS OF THE TRADE',
                 title: 'THE TOOLKIT',
                 lines: ['Python · SQL · C++ · JavaScript · ML · RAG', 'APIs · Power BI · Azure · Docker · Databases'],
                 footer: 'PRACTICAL TOOLS, REAL SYSTEMS', accent: '#3a9a8a'
             },
             {
-                t: 0.48, side: 1, kicker: '04 / FROM LEARNING TO SHIPPING',
+                t: 0.48, side: -1, kicker: '04 / FROM LEARNING TO SHIPPING',
                 title: 'WORK IN MOTION',
                 lines: ['Backend Developer  ·  July 2026 — Present', 'Konverge Technologies  ·  Bluestock Fintech'],
                 footer: 'APIS  /  DATA  /  PRACTICAL ML', accent: '#cc805e'
             },
             {
-                t: 0.70, side: -1, kicker: '05 / SELECTED BUILDS',
+                t: 0.70, side: 1, kicker: '05 / SELECTED BUILDS',
                 title: 'BUILT & SHIPPED',
                 lines: ['GGN Home · NIDS · RAG Research Agent', 'Stashr · WeCode · DealRadar'],
                 footer: 'IDEAS THAT LEAVE THE NOTEBOOK', accent: '#3a9a8a'
@@ -1452,7 +1452,7 @@ export class ScrollWorld
                 footer: 'SMALL WINS, SHIPPED OFTEN', accent: '#cc805e'
             },
             {
-                t: 0.99, side: -1, kicker: '09 / THE NEXT DESTINATION',
+                t: 0.99, side: 1, kicker: '09 / THE NEXT DESTINATION',
                 title: 'LET’S BUILD WHAT’S NEXT.',
                 lines: [portfolio.contact.email, portfolio.contact.location + '  ·  ' + portfolio.links.github.replace('https://', '')],
                 footer: 'SAY HELLO  /  BUILD SOMETHING USEFUL', accent: '#3a9a8a'
