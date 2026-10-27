@@ -56,6 +56,9 @@ try
             ambientMotes: game.world.scrollWorld.moteGeometry?.attributes.position.count ?? 0,
             storyBoards: game.world.scrollWorld.storyBoards?.length ?? 0,
             flyingNote: Boolean(game.world.scrollWorld.paperNote?.group),
+            facadeLabels: game.world.scrollWorld.facadeLabels?.length ?? 0,
+            aircraft: Boolean(game.world.scrollWorld.aircraft),
+            airportPamphlet: Boolean(game.world.scrollWorld.airportPamphlet?.group),
             loaderProgress: getComputedStyle(document.querySelector('#portfolio-loader')).getPropertyValue('--loader-progress').trim()
         }
     })
@@ -88,6 +91,12 @@ try
         throw new Error('Expected 9 readable in-world story boards; got ' + initial.storyBoards)
     if(!initial.flyingNote)
         throw new Error('Wind-blown portfolio note is missing from the 3D world')
+    if(initial.facadeLabels !== 6)
+        throw new Error('Expected 6 project labels on city façades; got ' + initial.facadeLabels)
+    if(!initial.aircraft)
+        throw new Error('Airport aircraft is missing from the 3D world')
+    if(!initial.airportPamphlet)
+        throw new Error('Wind-blown airport pamphlet is missing from the 3D world')
     if(initial.loaderProgress !== '100%')
         throw new Error('Loader did not reach 100% after boot; got ' + initial.loaderProgress)
 
@@ -171,8 +180,13 @@ try
         triangles: initial.triangles,
         visualEffects: {
             loaderStage: initial.loaderStage,
+            loaderProgress: initial.loaderProgress,
             scrollReactiveLightNodes: initial.energyNodes,
-            ambientMotes: initial.ambientMotes
+            ambientMotes: initial.ambientMotes,
+            inWorldStoryBoards: initial.storyBoards,
+            facadeProjectLabels: initial.facadeLabels,
+            parkedAircraft: initial.aircraft,
+            windblownNotes: { experience: initial.flyingNote, airport: initial.airportPamphlet }
         }
     }, null, 2))
 }
