@@ -104,7 +104,9 @@ export class Game
         this.rendering.setPostProcessing()
         this.setLoadingStage('ready', 'The road is yours', 'Almost there · your journey is ready.')
 
-        document.documentElement.classList.add('is-ready')
+        // Switch to banner-first mode only after the 3D world is fully ready.
+        // If initialisation fails, semantic HTML chapters remain visible as fallback.
+        document.documentElement.classList.add('is-ready', 'is-tour-ready')
 
         // Last, so the first tick sees a complete game
         this.rendering.start()
