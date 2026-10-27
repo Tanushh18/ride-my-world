@@ -5,9 +5,10 @@ import { ScrollTour } from './Game/ScrollTour.js'
 import portfolio from './data/portfolio.js'
 
 const root = document.documentElement
+const debugMode = window.location.hash.match(/debug/i)
 const game = new Game()
 
-if(window.location.hash.match(/debug/i))
+if(debugMode)
     window.game = game
 
 /**
