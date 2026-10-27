@@ -10,7 +10,8 @@
     "test": "vitest run",
     "smoke": "HEADLESS=0 node tests/smoke.mjs",
     "smoke:webgpu": "HEADLESS=0 WEBGPU=1 node tests/smoke.mjs",
-    "smoke:headless": "node tests/smoke.mjs"
+    "smoke:headless": "node tests/smoke.mjs",
+    "smoke:tour": "node tests/tour-smoke.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d": "^0.17.3",
