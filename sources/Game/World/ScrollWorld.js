@@ -1824,13 +1824,43 @@ export class ScrollWorld
 
         ctx.fillStyle = '#3e5555'
         const bodyLines = item.lines.slice(0, 4)
-        ctx.font = bodyLines.length > 3 ? '500 27px Arial, sans-serif' : bodyLines.length > 2 ? '500 30px Arial, sans-serif' : '500 34px Arial, sans-serif'
-        let bodyY = bodyLines.length > 2 ? 300 : 340
-        const lineStep = bodyLines.length > 3 ? 51 : 58
+        const hasLongCopy = bodyLines.some(line => line.length > 74)
+        const bodyFontSize = hasLongCopy ? 24 : bodyLines.length > 3 ? 27 : 30
+        ctx.font = '500 ' + bodyFontSize + 'px Arial, sans-serif'
+        const lineStep = hasLongCopy ? 43 : bodyLines.length > 3 ? 47 : 52
+        let bodyY = 290
+        let renderedRows = 0
+
+        // Wrap the original resume copy instead of truncating it to one canvas line.
+        // A board can use up to eight visual rows while keeping the footer clear.
         for(const line of bodyLines)
         {
-            ctx.fillText(line, 58, bodyY, 1260)
-            bodyY += lineStep
+            const words = String(line).split(/\\s+/)
+            let current = ''
+            for(const word of words)
+            {
+                const candidate = current ? current + ' ' + word : word
+                if(current && ctx.measureText(candidate).width > 1260)
+                {
+                    if(renderedRows >= 8)
+                        break
+                    ctx.fillText(current, 58, bodyY)
+                    bodyY += lineStep
+                    renderedRows++
+                    current = word
+                }
+                else
+                    current = candidate
+            }
+
+            if(current && renderedRows < 8)
+            {
+                ctx.fillText(current, 58, bodyY, 1260)
+                bodyY += lineStep
+                renderedRows++
+            }
+            if(renderedRows >= 8)
+                break
         }
 
         ctx.fillStyle = '#42676a'
@@ -1856,55 +1886,117 @@ export class ScrollWorld
             {
                 t: 0.025, side: 1, kicker: '01 / THE BEGINNING',
                 title: portfolio.name.toUpperCase(),
-                lines: [portfolio.roleLine.replaceAll(' · ', '  /  '), 'AI / ML  ·  DATA ANALYTICS  ·  BACKEND SYSTEMS', portfolio.location + '  ·  Scroll to ride through my work'],
+                lines: [portfolio.roleLine.replaceAll(' · ', ' / '), 'AI / ML  ·  DATA ANALYTICS  ·  BACKEND SYSTEMS', 'Product engineering, analytics and applied machine learning', portfolio.location + '  ·  Scroll to ride through my work'],
                 footer: 'BUILD  /  ANALYSE  /  SHIP', accent: '#cc805e'
             },
             {
                 t: 0.13, side: -1, kicker: '02 / THE PERSON BEHIND THE BUILD',
                 title: 'AI. DATA. SYSTEMS.',
-                lines: ['Machine learning, data analytics and backend engineering.', 'Python · SQL · ML pipelines · REST APIs', 'Azure AI and cloud fundamentals certifications', 'Building useful software from real data'],
+                lines: [
+                    'AI/ML and data analytics with a strong foundation in statistical analysis and backend engineering.',
+                    'Exploratory data analysis, feature engineering and end-to-end model development using Python and SQL.',
+                    'Production REST APIs and deployed data-driven applications.',
+                    'Microsoft-certified across Azure cloud and AI services.'
+                ],
                 footer: 'CURIOSITY → USEFUL SOFTWARE', accent: '#3a9a8a'
             },
             {
                 t: 0.275, side: 1, kicker: '03 / TOOLS OF THE TRADE',
                 title: 'THE TOOLKIT',
-                lines: ['Python · SQL · C++ · JavaScript · React · Node.js', 'Machine learning · RAG · Analytics · Power BI', 'Azure · Docker · PostgreSQL · MongoDB', 'EDA · feature engineering · REST API design'],
+                lines: [
+                    'Languages: Python · SQL · C++ · JavaScript',
+                    'AI / ML: Regression · Classification · Clustering · Scikit-learn · LangChain · RAG · LLMs',
+                    'Data: Pandas · NumPy · Matplotlib · Power BI · Excel · EDA · Feature Engineering',
+                    'Databases: MySQL · PostgreSQL · MongoDB | Web: React · Node · Express · REST APIs | Cloud: Git · Docker · Azure · Jupyter'
+                ],
                 footer: 'PRACTICAL TOOLS, REAL SYSTEMS', accent: '#3a9a8a'
             },
             {
-                t: 0.48, side: -1, kicker: '04 / FROM LEARNING TO SHIPPING',
-                title: 'WORK IN MOTION',
-                lines: ['Backend Developer  ·  July 2026 — Present', 'Konverge Technologies  ·  IT/data analytics internship', 'Bluestock Fintech  ·  Backend development', 'APIs · databases · data preparation · model workflows'],
-                footer: 'APIS  /  DATA  /  PRACTICAL ML', accent: '#cc805e'
+                t: 0.405, side: -1, kicker: '04 / PROFESSIONAL EXPERIENCE · 01 OF 03',
+                title: 'BACKEND DEVELOPER',
+                lines: [
+                    'Product-Based Company · July 2026 – Present',
+                    'Develop and maintain backend services and REST APIs powering a production-grade product platform.',
+                    'Collaborate with cross-functional teams to design scalable, maintainable server-side architecture.',
+                    'Work across databases and cloud infrastructure to improve application performance and reliability.'
+                ],
+                footer: 'PRODUCTION APIs  /  DATABASES  /  CLOUD', accent: '#cc805e'
+            },
+            {
+                t: 0.465, side: 1, kicker: '04 / PROFESSIONAL EXPERIENCE · 02 OF 03',
+                title: 'IT INTERN',
+                lines: [
+                    'Konverge Technologies Pvt. Ltd. · June 2025 – August 2025 · Gurugram, India',
+                    'Analysed IT operations datasets to identify recurring incident patterns and service delivery trends.',
+                    'Performed data cleaning, preprocessing, and exploratory data analysis using Python and Excel.',
+                    'Applied machine learning techniques to automate ticket categorisation and priority prediction.'
+                ],
+                footer: 'DATA CLEANING  /  EDA  /  MACHINE LEARNING', accent: '#3a9a8a'
+            },
+            {
+                t: 0.535, side: -1, kicker: '04 / PROFESSIONAL EXPERIENCE · 03 OF 03',
+                title: 'SOFTWARE DEVELOPMENT INTERN',
+                lines: [
+                    'Bluestock Fintech · April 2025 – May 2025 · Remote',
+                    'Contributed to backend development for fintech applications using Node.js and REST APIs.',
+                    'Designed and queried MongoDB collections supporting core financial application workflows.',
+                    'Focus: backend engineering, API integration and application data modelling.'
+                ],
+                footer: 'NODE.JS  /  REST APIs  /  MONGODB', accent: '#cc805e'
             },
             {
                 t: 0.70, side: 1, kicker: '05 / SELECTED BUILDS',
                 title: 'BUILT & SHIPPED',
-                lines: ['GGN Home · Live real estate platform + AI recommendations', 'NIDS · Network intrusion detection with machine learning', 'RAG Research Agent · Document retrieval and grounded answers', 'Stashr · WeCode · DealRadar · Developer and data tools'],
+                lines: [
+                    'GGN Home · Live real estate platform with role-based dashboards and AI recommendations.',
+                    'NIDS · Network traffic classification for DoS, Probe, R2L and U2R attacks.',
+                    'RAG Research Agent · Document ingestion, semantic retrieval and grounded AI responses.',
+                    'Stashr · WeCode · DealRadar · Encrypted vault, collaborative coding and deal discovery.'
+                ],
                 footer: 'IDEAS THAT LEAVE THE NOTEBOOK', accent: '#3a9a8a'
             },
             {
                 t: 0.82, side: 1, kicker: '06 / THE LEARNING ROUTE',
                 title: 'THE FOUNDATION',
-                lines: ['B.Tech · Computer Science Engineering', 'Artificial Intelligence & Machine Learning', 'VIT Bhopal University · CGPA 8.59 / 10', 'CBSE Class X and XII · 90% in both'],
-                footer: '90% IN CBSE CLASS X AND XII', accent: '#cc805e'
+                lines: [
+                    'B.Tech · Computer Science Engineering — Artificial Intelligence & Machine Learning.',
+                    'VIT Bhopal University · CGPA 8.59 / 10.',
+                    'Senior Secondary (CBSE XII) · Blue Bells Model School, Gurugram · 90%.',
+                    'Secondary (CBSE X) · Our Lady of Fatima Convent School, Gurugram · 90%.'
+                ],
+                footer: 'ML  /  DEEP LEARNING  /  DBMS  /  DATA STRUCTURES', accent: '#cc805e'
             },
             {
                 t: 0.89, side: -1, kicker: '07 / CERTIFIED LEARNING',
                 title: 'CLOUD. AI. PRACTICE.',
-                lines: ['Microsoft Azure AI-102 · AI-900 · AZ-900', 'Google IT Support Professional Certificate', 'Cloud fundamentals · AI services · App development', 'Professional credentials alongside product builds'],
-                footer: 'LEARN IT  /  BUILD WITH IT', accent: '#3a9a8a'
+                lines: [
+                    'Azure AI Apps and Agents Developer Associate (AI-102) · September 2026.',
+                    'Azure AI Fundamentals (AI-900) · June 2026.',
+                    'Azure Fundamentals (AZ-900) · May 2026.',
+                    'Google IT Support Professional Certificate · Google / Coursera.'
+                ],
+                footer: 'CLOUD FUNDAMENTALS  /  AI SERVICES', accent: '#3a9a8a'
             },
             {
                 t: 0.955, side: 1, kicker: '08 / PROGRESS YOU CAN POINT TO',
                 title: 'CONSISTENCY COMPOUNDS.',
-                lines: ['500+ DSA problems solved · 4 industry certifications', '8.59 CGPA · 90% in CBSE Class X and XII', 'GGN Home live · Built and shipped a real product', 'Three Microsoft Azure credentials across cloud and AI'],
+                lines: [
+                    '500+ DSA problems solved across LeetCode and HackerRank.',
+                    '4 industry certifications, including three Microsoft Azure credentials.',
+                    '8.59 B.Tech CGPA and 90% in both CBSE Class X and XII.',
+                    'GGN Home independently designed, built and deployed as a live product.'
+                ],
                 footer: 'SMALL WINS, SHIPPED OFTEN', accent: '#cc805e'
             },
             {
                 t: 0.99, side: 1, kicker: '09 / THE NEXT DESTINATION',
                 title: 'LET’S BUILD WHAT’S NEXT.',
-                lines: [portfolio.contact.email, portfolio.contact.phone, portfolio.contact.location + ' · India', 'LinkedIn: Tanush Chawla · GitHub: ' + portfolio.handle],
+                lines: [
+                    portfolio.contact.email,
+                    portfolio.contact.phone,
+                    portfolio.contact.location + ' · India',
+                    'LinkedIn: ' + portfolio.links.linkedin.replace('https://www.linkedin.com/in/', '').replace(/\\/$/, '') + ' · GitHub: ' + portfolio.handle
+                ],
                 footer: 'SAY HELLO  /  BUILD SOMETHING USEFUL', accent: '#3a9a8a'
             }
         ]
