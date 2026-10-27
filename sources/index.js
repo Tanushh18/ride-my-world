@@ -27,6 +27,8 @@ const game = new Game()
 if(debugMode)
     window.game = game
 
+const THREEClamp = (value, min, max) => Math.min(max, Math.max(min, value))
+
 const element = (tag, className = '', text = '') =>
 {
     const node = document.createElement(tag)
@@ -215,6 +217,31 @@ if(projectGrid)
             actions.append(link(item.label + ' ↗', item.url, item.primary ? 'project-action-primary' : 'project-action'))
         })
         card.append(actions)
+
+        // A restrained, pointer-aware tilt gives the project tiles a tactile
+        // glass-card feel on desktop without moving the scroll-driven camera.
+        if(window.matchMedia('(pointer: fine) and (hover: hover)').matches)
+        {
+            card.addEventListener('pointermove', (event) =>
+            {
+                const rect = card.getBoundingClientRect()
+                const x = THREEClamp((event.clientX - rect.left) / Math.max(1, rect.width), 0, 1)
+                const y = THREEClamp((event.clientY - rect.top) / Math.max(1, rect.height), 0, 1)
+                card.style.setProperty('--tilt-x', ((0.5 - y) * 3.8).toFixed(2) + 'deg')
+                card.style.setProperty('--tilt-y', ((x - 0.5) * 5.8).toFixed(2) + 'deg')
+                card.style.setProperty('--shine-x', (x * 100).toFixed(1) + '%')
+                card.style.setProperty('--shine-y', (y * 100).toFixed(1) + '%')
+            })
+
+            card.addEventListener('pointerleave', () =>
+            {
+                card.style.setProperty('--tilt-x', '0deg')
+                card.style.setProperty('--tilt-y', '0deg')
+                card.style.setProperty('--shine-x', '50%')
+                card.style.setProperty('--shine-y', '20%')
+            })
+        }
+
         return card
     })
     projectGrid.replaceChildren(...cards)
