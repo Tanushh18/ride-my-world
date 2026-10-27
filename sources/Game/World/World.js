@@ -6,6 +6,7 @@ import { Scenery } from './Scenery.js'
 import { Sky } from './Sky.js'
 import { VisualVehicle } from './VisualVehicle.js'
 import { ProjectsArea } from './Areas/ProjectsArea.js'
+import { ScrollWorld } from './ScrollWorld.js'
 
 /**
  * Owns everything visible in the scene.
@@ -25,6 +26,7 @@ export class World
         this.visualVehicle = new VisualVehicle()
         this.scenery = new Scenery()
         this.playground = new Playground()
+        this.scrollWorld = new ScrollWorld(this.game)
         this.projectsArea = new ProjectsArea()
     }
 }
