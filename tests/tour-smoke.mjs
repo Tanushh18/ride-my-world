@@ -49,7 +49,11 @@ try
             rider: game.world.visualVehicle.group.position.toArray(),
             camera: game.view.camera.position.toArray(),
             wheel: game.world.visualVehicle.wheels[0].spinner.rotation.z,
-            triangles: game.rendering.renderer.info.render.triangles
+            triangles: game.rendering.renderer.info.render.triangles,
+            loaderStage: document.querySelector('#portfolio-loader')?.dataset.stage,
+            loaderHeadline: document.querySelector('.loader-headline')?.textContent,
+            energyNodes: game.world.scrollWorld.energyInstances?.count ?? 0,
+            ambientMotes: game.world.scrollWorld.moteGeometry?.attributes.position.count ?? 0
         }
     })
 
@@ -71,6 +75,12 @@ try
         throw new Error('Expected Tanush branding; got ' + initial.name)
     if(initial.triangles <= 0)
         throw new Error('Renderer did not draw the 3D scene')
+    if(initial.loaderStage !== 'ready')
+        throw new Error('Cinematic loader did not reach the real ready stage; got ' + initial.loaderStage)
+    if(initial.energyNodes !== 32)
+        throw new Error('Scroll-reactive light trails missing; got ' + initial.energyNodes)
+    if(initial.ambientMotes !== 300)
+        throw new Error('WebGL atmosphere particles missing; got ' + initial.ambientMotes)
 
     await page.evaluate(() =>
     {
@@ -149,7 +159,12 @@ try
             wheelsAnimated: Math.abs(midRide.wheel - initial.wheel) > 10,
             endProgress: Number(endRide.progress.toFixed(3))
         },
-        triangles: initial.triangles
+        triangles: initial.triangles,
+        visualEffects: {
+            loaderStage: initial.loaderStage,
+            scrollReactiveLightNodes: initial.energyNodes,
+            ambientMotes: initial.ambientMotes
+        }
     }, null, 2))
 }
 finally
