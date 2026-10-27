@@ -23,5 +23,11 @@
     "vite": "^7.2.4",
     "vite-plugin-wasm": "^3.5.0",
     "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": "22.x"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
   }
 }
