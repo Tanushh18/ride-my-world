@@ -45,15 +45,15 @@ export class ScrollTour
         // arrives beside the rider, the view eases toward it instead of letting
         // useful writing remain tiny scenery at the edge of the screen.
         const storyStops = [
-            { t: 0.025, side: -1 },
-            { t: 0.13, side: 1 },
-            { t: 0.275, side: -1 },
-            { t: 0.48, side: 1 },
-            { t: 0.70, side: -1 },
+            { t: 0.025, side: 1 },
+            { t: 0.13, side: -1 },
+            { t: 0.275, side: 1 },
+            { t: 0.48, side: -1 },
+            { t: 0.70, side: 1 },
             { t: 0.82, side: 1 },
             { t: 0.89, side: -1 },
             { t: 0.955, side: 1 },
-            { t: 0.99, side: -1 }
+            { t: 0.99, side: 1 }
         ]
         const boardOffset = this.game.world.scrollWorld.storyBoardOffset ?? (window.innerWidth < 760 ? 6 : 7.2)
         this.storyFocusStops = storyStops.map(stop =>
