@@ -1044,9 +1044,9 @@ body
     }
 }
 
-/* Banner-first ride mode: let the 3D environment carry the story instead of
-   stacking large HTML panels over the camera. The content stays in the DOM as
-   a no-WebGL fallback and is revealed again when a keyboard user focuses it. */
+/* Once the live tour starts, portfolio facts are presented on the physical
+   roadside boards and building marquees instead of foreground HTML cards.
+   The semantic HTML remains the fallback when WebGL cannot initialise. */
 html.is-tour-ready .tour-content .story-section::before
 {
     opacity: 0 !important;
@@ -1056,36 +1056,29 @@ html.is-tour-ready .tour-content .story-section::before
 html.is-tour-ready .tour-content .story-inner
 {
     opacity: 0 !important;
-    pointer-events: none;
-    transition: opacity 180ms ease;
-}
-
-html.is-tour-ready .tour-content .story-inner:focus-within
-{
-    opacity: 1 !important;
-    pointer-events: auto;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transition: none !important;
 }
 
 html.is-tour-ready .tour-content .section-wash,
 html.is-tour-ready .tour-content .floating-caption,
 html.is-tour-ready .tour-content .chapter-index,
 html.is-tour-ready .tour-content .hero-coordinate,
-html.is-tour-ready .tour-content .contact-backdrop
+html.is-tour-ready .tour-content .contact-backdrop,
+html.is-tour-ready .tour-content .contact-footer
 {
     opacity: 0 !important;
+    visibility: hidden !important;
     pointer-events: none !important;
+}
+
+.legacy-project-card
+{
+    display: none !important;
 }
 
 html.is-tour-ready .tour-content .story-section
 {
     background: transparent !important;
 }
-
-@media (prefers-reduced-motion: reduce)
-{
-    html.is-tour-ready .tour-content .story-inner
-    {
-        transition: none;
-    }
-}
-
