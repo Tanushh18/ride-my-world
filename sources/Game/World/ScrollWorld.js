@@ -391,16 +391,22 @@ export class ScrollWorld
             this.group.add(bank)
         }
 
-        // The falls sit beside the road, not in it; the rider can continue
-        // across the river while the camera briefly opens to the scenery.
+        // Compose the waterfall relative to the road frame. Previously the
+        // cliff was hard-coded in world coordinates and could overlap the rider's
+        // lane. This places it on the riverbank and aligns the falls to the route.
+        const roadFrame = this.routeFrame(0.60)
+        const waterfall = new THREE.Group()
+        waterfall.position.copy(roadFrame.position).addScaledVector(roadFrame.side, 12.2)
+        waterfall.rotation.y = roadFrame.yaw
+
         const cliff = new THREE.Mesh(
             new THREE.BoxGeometry(12, 9.2, 2.8),
             this.material('#8f7772', { roughness: 1 })
         )
-        cliff.position.set(24, 4.35, -35)
+        cliff.position.set(0, 4.35, 0)
         cliff.castShadow = true
         cliff.receiveShadow = true
-        this.group.add(cliff)
+        waterfall.add(cliff)
 
         const waterfallFace = new THREE.Mesh(
             new THREE.PlaneGeometry(10.8, 7.8),
@@ -412,8 +418,8 @@ export class ScrollWorld
                 depthWrite: false
             })
         )
-        waterfallFace.position.set(24, 4.2, -36.45)
-        this.group.add(waterfallFace)
+        waterfallFace.position.set(0, 4.2, -1.43)
+        waterfall.add(waterfallFace)
 
         for(let i = 0; i < 9; i++)
         {
@@ -427,8 +433,8 @@ export class ScrollWorld
                     depthWrite: false
                 })
             )
-            stream.position.set(19.1 + i * 1.22, 3.5 + (i % 3) * 0.1, -36.48)
-            this.group.add(stream)
+            stream.position.set(-5.1 + i * 1.28, 3.5 + (i % 3) * 0.1, -1.48)
+            waterfall.add(stream)
             this.waterfallStreams.push(stream)
         }
 
@@ -441,10 +447,12 @@ export class ScrollWorld
         for(let i = 0; i < 12; i++)
         {
             const mist = new THREE.Mesh(new THREE.SphereGeometry(0.8 + (i % 4) * 0.2, 8, 6), mistMaterial)
-            mist.position.set(18.5 + (i % 4) * 2.7, 0.45 + (i % 3) * 0.12, -34.2 + Math.floor(i / 4) * 0.65)
+            mist.position.set(-5.2 + (i % 4) * 3.4, 0.45 + (i % 3) * 0.12, -0.4 + Math.floor(i / 4) * 0.65)
             mist.scale.y = 0.48
-            this.group.add(mist)
+            waterfall.add(mist)
         }
+
+        this.group.add(waterfall)
     }
 
     addBridge()
