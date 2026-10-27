@@ -53,7 +53,10 @@ try
             loaderStage: document.querySelector('#portfolio-loader')?.dataset.stage,
             loaderHeadline: document.querySelector('.loader-headline')?.textContent,
             energyNodes: game.world.scrollWorld.energyInstances?.count ?? 0,
-            ambientMotes: game.world.scrollWorld.moteGeometry?.attributes.position.count ?? 0
+            ambientMotes: game.world.scrollWorld.moteGeometry?.attributes.position.count ?? 0,
+            storyBoards: game.world.scrollWorld.storyBoards?.length ?? 0,
+            flyingNote: Boolean(game.world.scrollWorld.paperNote?.group),
+            loaderProgress: getComputedStyle(document.querySelector('#portfolio-loader')).getPropertyValue('--loader-progress').trim()
         }
     })
 
@@ -81,6 +84,12 @@ try
         throw new Error('Scroll-reactive light trails missing; got ' + initial.energyNodes)
     if(initial.ambientMotes !== 300)
         throw new Error('WebGL atmosphere particles missing; got ' + initial.ambientMotes)
+    if(initial.storyBoards !== 9)
+        throw new Error('Expected 9 readable in-world story boards; got ' + initial.storyBoards)
+    if(!initial.flyingNote)
+        throw new Error('Wind-blown portfolio note is missing from the 3D world')
+    if(initial.loaderProgress !== '100%')
+        throw new Error('Loader did not reach 100% after boot; got ' + initial.loaderProgress)
 
     await page.evaluate(() =>
     {
