@@ -1,52 +1,48 @@
 /**
- * Every colour in the world comes from here.
- *
- * A shared palette is what makes a procedural world read as one place instead
- * of a pile of shapes. Nothing else in the project should hardcode a colour.
+ * The palette for Tanushh18's world: deep twilight, warm road lights, and
+ * lush green scenery. Keeping colours central makes the 3D world cohesive.
  */
 export default {
     // Sky and atmosphere
-    skyZenith: '#3aa8ff',
-    skyHorizon: '#d6f4ff',
-    fog: '#cfeeff',
-    sun: '#fff4dd',
+    skyZenith: '#183447',
+    skyHorizon: '#f5bc83',
+    fog: '#f5bc83',
+    sun: '#fff0c8',
 
-    // Shadows are a light, cool MULTIPLIER, not a colour to blend towards.
-    // A saturated purple multiplied into grass green lands on grey; a pale
-    // lavender darkens it while keeping the hue and shifting it cool.
-    shadow: '#9a95d8',
+    // Soft cool shadows keep the foliage readable in the warm light.
+    shadow: '#b3a0b4',
 
     // Ground
-    grassLight: '#a9d557',
-    grassMid: '#84c247',
-    grassDark: '#5fa63c',
-    dirt: '#dda45f',
-    dirtDark: '#b87c42',
+    grassLight: '#9dc879',
+    grassMid: '#659e67',
+    grassDark: '#3e7559',
+    dirt: '#c49a6a',
+    dirtDark: '#97704c',
 
     // Plants
-    trunk: '#96603c',
-    foliageLight: '#7ac94b',
-    foliageMid: '#5eae3d',
-    foliageDeep: '#3f8f34',
-    blossom: '#ff8fb8',
+    trunk: '#77543e',
+    foliageLight: '#a1c66c',
+    foliageMid: '#5d9b5b',
+    foliageDeep: '#2f684f',
+    blossom: '#f4a0a7',
 
     // Rock and built things
-    rock: '#a8a49b',
-    rockDark: '#8a857b',
-    concrete: '#e6e9f0',
-    wood: '#cf854f',
-    metal: '#8f9bb3',
+    rock: '#9b9a8d',
+    rockDark: '#77796c',
+    concrete: '#d6d8ca',
+    wood: '#c88754',
+    metal: '#8eaaa7',
 
-    // The car
-    carPaint: '#ff5c3d',
-    carPaintDark: '#e0432a',
-    carDark: '#2c3149',
-    carGlass: '#93dcff',
-    tyre: '#24262f',
-    rim: '#f4f6fa',
+    // Scooter and rider
+    carPaint: '#e7734d',
+    carPaintDark: '#ba4e39',
+    carDark: '#25383b',
+    carGlass: '#9bd7cc',
+    tyre: '#1f292a',
+    rim: '#ede5d3',
 
-    // Accents for signage and interactive bits
-    accent: '#ffc23d',
-    accentWarm: '#ff7a3d',
-    accentCool: '#41d6ff'
+    // Accents for project signage and interactive elements
+    accent: '#ffd17f',
+    accentWarm: '#e56d55',
+    accentCool: '#68d5c0'
 }
