@@ -5,6 +5,22 @@ import { ScrollTour } from './Game/ScrollTour.js'
 import portfolio from './data/portfolio.js'
 
 const root = document.documentElement
+root.classList.add('js')
+
+const loader = document.querySelector('#portfolio-loader')
+const loaderTitle = document.querySelector('[data-loader-title]')
+const loaderNote = document.querySelector('[data-loader-note]')
+document.addEventListener('portfolio:loading', (event) =>
+{
+    const { title, note, stage } = event.detail ?? {}
+    if(loaderTitle && title)
+        loaderTitle.textContent = title
+    if(loaderNote && note)
+        loaderNote.textContent = note
+    if(loader)
+        loader.dataset.stage = stage ?? 'boot'
+})
+
 const debugMode = window.location.hash.match(/debug/i)
 const game = new Game()
 
@@ -308,6 +324,11 @@ game.readyPromise.then(() =>
     // ScrollTour synchronizes the scooter, camera and lighting with one road curve.
     game.view.scrollTour = new ScrollTour(game)
     root.classList.add('is-tour-ready')
+    if(loader)
+    {
+        loader.setAttribute('aria-hidden', 'true')
+        loader.classList.add('is-loader-finished')
+    }
 }).catch((error) =>
 {
     console.error(error)
