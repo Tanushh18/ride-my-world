@@ -87,6 +87,14 @@ export class View
 
     update()
     {
+        // When the page is in portfolio-tour mode, scroll owns the camera.
+        // Return early so the vehicle-follow camera never fights the tour path.
+        if(this.scrollTour?.active)
+        {
+            this.scrollTour.update(this.camera)
+            return
+        }
+
         const vehicle = this.game.physicsVehicle
         const delta = this.game.ticker.delta
 
