@@ -21,12 +21,17 @@ export class ScrollWorld
             [43, -56], [60, -67], [76, -79], [91, -90],
             [108, -98], [126, -108]
         ]
+        this.waterfallStreams = []
 
         this.addRoad()
         this.addRiverAndWaterfall()
         this.addBridge()
         this.addCity()
         this.addAirport()
+
+        // One listener on the existing renderer-owned ticker keeps water
+        // movement synchronized without starting another animation loop.
+        this.game.ticker.events.on('tick', () => { this.animateWater() }, 30)
     }
 
     material(color, options = {})
@@ -124,13 +129,13 @@ export class ScrollWorld
 
     addRiverAndWaterfall()
     {
-        const riverMaterial = this.material('#328f99', {
+        this.riverMaterial = this.material('#328f99', {
             roughness: 0.26,
             metalness: 0.2,
             transparent: true,
             opacity: 0.87
         })
-        const river = new THREE.Mesh(new THREE.PlaneGeometry(42, 15), riverMaterial)
+        const river = new THREE.Mesh(new THREE.PlaneGeometry(42, 15), this.riverMaterial)
         river.rotation.x = -Math.PI / 2
         river.rotation.y = -0.42
         river.position.set(8, 0.2, -32)
@@ -168,6 +173,7 @@ export class ScrollWorld
             stream.position.set(28.34, 3.6, -46.4 + i * 1.9)
             stream.rotation.y = Math.PI / 2
             this.group.add(stream)
+            this.waterfallStreams.push(stream)
         }
 
         const mistMaterial = new THREE.MeshBasicMaterial({
@@ -281,6 +287,23 @@ export class ScrollWorld
             lamp.position.set(x, 3.55, z)
             this.group.add(lamp)
         }
+    }
+
+
+    animateWater()
+    {
+        const time = this.game.ticker.elapsed
+
+        // Tiny material and stream changes suggest moving water without a
+        // costly full fluid simulation or a second render loop.
+        if(this.riverMaterial)
+            this.riverMaterial.opacity = 0.84 + Math.sin(time * 0.9) * 0.025
+
+        this.waterfallStreams.forEach((stream, index) =>
+        {
+            stream.position.y = 3.6 + Math.sin(time * 2.1 + index * 0.7) * 0.13
+            stream.material.opacity = 0.42 + Math.sin(time * 1.7 + index) * 0.045
+        })
     }
 
     addAirport()
