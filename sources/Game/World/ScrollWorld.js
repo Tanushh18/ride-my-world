@@ -1,4 +1,5 @@
 import * as THREE from 'three/webgpu'
+import { color as tslColor, mix as tslMix, uniform as tslUniform } from 'three/tsl'
 
 /**
  * One connected, original low-poly world for the scooter journey.
@@ -40,14 +41,27 @@ export class ScrollWorld
         this.game.ticker.events.on('tick', () => { this.animateWater() }, 30)
     }
 
-    material(color, options = {})
+    material(hexColor, options = {})
     {
-        return new THREE.MeshStandardMaterial({
-            color,
-            roughness: 0.82,
-            metalness: 0.02,
-            ...options
+        // The world intentionally shares the portfolio's custom sunset fog.
+        // A node material applies that fog to the procedural architecture too,
+        // so distant buildings melt into the horizon rather than ending abruptly.
+        const fog = this.game.fog
+        const baseColor = tslUniform(tslColor(hexColor))
+        const material = new THREE.MeshStandardNodeMaterial({
+            color: hexColor,
+            roughness: options.roughness ?? 0.82,
+            metalness: options.metalness ?? 0.02,
+            transparent: options.transparent ?? false,
+            opacity: options.opacity ?? 1,
+            side: options.side ?? THREE.FrontSide,
+            depthWrite: options.depthWrite ?? true,
+            emissive: options.emissive ?? '#000000',
+            emissiveIntensity: options.emissiveIntensity ?? 0
         })
+
+        material.colorNode = tslMix(baseColor, fog.colorUniform, fog.strengthNode)
+        return material
     }
 
     routeFrame(t)
