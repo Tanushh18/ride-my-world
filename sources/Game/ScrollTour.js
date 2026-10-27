@@ -43,8 +43,35 @@ export class ScrollTour
 
         this.onScroll = () =>
         {
-            const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight)
-            this.targetProgress = THREE.MathUtils.clamp(window.scrollY / maxScroll, 0, 1)
+            // Bind camera keyframes to the real section boundaries, not the
+            // raw document height. Longer project sections must not desync the tour.
+            const sections = this.sections?.length
+                ? this.sections
+                : Array.from(document.querySelectorAll('[data-chapter]'))
+
+            if(sections.length < 2)
+            {
+                const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight)
+                this.targetProgress = THREE.MathUtils.clamp(window.scrollY / maxScroll, 0, 1)
+                return
+            }
+
+            const scrollY = window.scrollY
+            const tops = sections.map(section => section.getBoundingClientRect().top + scrollY)
+            let index = 0
+
+            while(index < tops.length - 1 && tops[index + 1] <= scrollY)
+                index++
+
+            if(index >= tops.length - 1)
+            {
+                this.targetProgress = 1
+                return
+            }
+
+            const segmentLength = Math.max(1, tops[index + 1] - tops[index])
+            const segmentProgress = THREE.MathUtils.clamp((scrollY - tops[index]) / segmentLength, 0, 1)
+            this.targetProgress = (index + segmentProgress) / (sections.length - 1)
         }
 
         this.onScroll()
@@ -55,6 +82,7 @@ export class ScrollTour
         this.progressLabel = document.querySelector('.js-progress-label')
         this.sections = Array.from(document.querySelectorAll('[data-chapter]'))
         this.navLinks = Array.from(document.querySelectorAll('[data-nav-target]'))
+        this.onScroll()
 
         this.onNavClick = (event) =>
         {
