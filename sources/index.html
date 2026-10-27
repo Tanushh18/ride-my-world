@@ -4,136 +4,233 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#172b32">
-    <title>Tanushh18 — Ride My World</title>
-    <meta name="description" content="An interactive 3D portfolio by Tanushh18. Drive through a living world and discover projects in full-stack engineering, automation, and AI.">
+    <title>Tanush Portfolio — Tanushh18</title>
+    <meta name="description" content="A scroll-driven 3D portfolio journey through the projects, engineering interests, and learning path of Tanushh18.">
     <link rel="icon" type="image/svg+xml" href="./favicon.svg">
 </head>
 <body>
-    <div class="game js-game">
-        <canvas class="canvas js-canvas" aria-label="Interactive 3D portfolio world"></canvas>
+    <div class="game js-game" aria-hidden="true">
+        <canvas class="canvas js-canvas"></canvas>
     </div>
-
-    <header class="masthead" aria-label="Portfolio navigation">
-        <a class="brand" href="#" aria-label="Tanushh18 portfolio home">
-            <span class="brand-symbol">T<span>.</span></span>
-            <span class="brand-copy">
-                <strong>TANUSHH18</strong>
-                <small>DEVELOPER · BUILDER</small>
-            </span>
-        </a>
-
-        <div class="nav-status">
-            <span class="status-dot"></span>
-            <span>INTERACTIVE PORTFOLIO</span>
-        </div>
-
-        <a class="github-link" href="https://github.com/Tanushh18" target="_blank" rel="noopener noreferrer">
-            <span>GitHub</span>
-            <span aria-hidden="true">↗</span>
-        </a>
-    </header>
 
     <div class="loader">
         <div class="loader-mark">T<span>.</span></div>
-        <div class="loader-title">Building your world</div>
+        <div class="loader-title">Preparing the journey</div>
         <div class="loader-track"><span></span></div>
-        <p class="loader-note">Loading the road less ordinary</p>
+        <p class="loader-note">Loading the world behind the work</p>
     </div>
 
     <div class="failure">
         <div class="failure-mark">!</div>
-        <div class="failure-title">This world could not start</div>
+        <div class="failure-title">The 3D journey could not start</div>
         <p class="failure-message js-error-message"></p>
-        <p class="failure-help">Try the latest version of Chrome or Edge with hardware acceleration enabled.</p>
+        <p class="failure-help">The portfolio content is still available below. Try a current Chrome or Edge browser with hardware acceleration enabled.</p>
     </div>
 
-    <div class="hint" aria-label="Keyboard driving controls">
-        <span class="key">W A S D</span> drive
-        <span class="key">SHIFT</span> boost
-        <span class="key">CTRL / B</span> brake
-        <span class="key">R</span> respawn
-        <span class="key">DRAG</span> look around
+    <header class="masthead">
+        <a class="brand" href="#home" aria-label="Tanush Portfolio home">
+            <span class="brand-symbol">T<span>.</span></span>
+            <span class="brand-copy">
+                <strong>TANUSH PORTFOLIO</strong>
+                <small>DEVELOPER · BUILDER</small>
+            </span>
+        </a>
+
+        <nav class="tour-nav js-tour-nav" aria-label="Portfolio sections">
+            <a href="#about" data-nav-target="about">About</a>
+            <a href="#skills" data-nav-target="skills">Skills</a>
+            <a href="#experience" data-nav-target="experience">Experience</a>
+            <a href="#projects" data-nav-target="projects">Projects</a>
+            <a href="#education" data-nav-target="education">Education</a>
+            <a href="#contact" data-nav-target="contact">Contact</a>
+        </nav>
+
+        <a class="github-link" href="https://github.com/Tanushh18" target="_blank" rel="noopener noreferrer">
+            GitHub <span aria-hidden="true">↗</span>
+        </a>
+    </header>
+
+    <div class="journey-progress" aria-hidden="true">
+        <span class="journey-progress-bar js-progress-bar"></span>
     </div>
 
-    <aside class="card js-card" aria-live="polite" aria-label="Project details">
-        <div class="card-head">
-            <span class="card-year js-card-year"></span>
-            <span class="card-role js-card-role"></span>
-        </div>
-        <h2 class="card-title js-card-title"></h2>
-        <p class="card-description js-card-description"></p>
-        <ul class="card-tags js-card-tags"></ul>
-        <div class="card-links js-card-links"></div>
-    </aside>
-
-    <section class="intro-screen" aria-label="Welcome to the portfolio">
-        <div class="intro-grid" aria-hidden="true"></div>
-        <div class="intro-content">
-            <p class="eyebrow"><span>01</span> PERSONAL PORTFOLIO / 2026</p>
-            <h1>Building the<br>digital <em>world.</em></h1>
-            <p class="intro-description">
-                I'm Tanushh18 — a developer building full-stack products, automation,
-                and AI-powered tools. Take a drive through my work and discover what I'm building.
-            </p>
-            <div class="intro-actions">
-                <button class="enter-button js-enter-world" type="button">
-                    <span>Start the ride</span>
-                    <span class="button-arrow" aria-hidden="true">↗</span>
-                </button>
-                <a class="source-link" href="https://github.com/Tanushh18/ride-my-world" target="_blank" rel="noopener noreferrer">
-                    Explore the code <span aria-hidden="true">↗</span>
+    <main class="tour-content">
+        <section class="story-section hero-section" id="home" data-chapter="home">
+            <div class="section-wash"></div>
+            <div class="story-inner hero-inner">
+                <p class="eyebrow"><span class="eyebrow-number">01</span> A DIGITAL JOURNEY / 2026</p>
+                <h1>Tanush<br><em>Portfolio.</em></h1>
+                <p class="hero-lede">Building ideas into real-world technology.</p>
+                <p class="hero-copy">A journey through the products I build, the systems I explore, and the skills I’m growing along the way.</p>
+                <a class="scroll-cue" href="#about">
+                    <span class="scroll-cue-icon">↓</span>
+                    <span><strong>SCROLL TO EXPLORE</strong><small>One world. Different chapters.</small></span>
                 </a>
             </div>
-            <div class="control-caption">
-                <span class="key">W A S D</span><span>DRIVE</span>
-                <span class="key">SHIFT</span><span>BOOST</span>
-                <span class="key">DRAG</span><span>LOOK AROUND</span>
+            <div class="hero-coordinate" aria-hidden="true"><span>28°N</span><i></i><span>BUILD / LEARN / SHIP</span></div>
+            <div class="chapter-index"><strong>01</strong><span>THE BEGINNING</span></div>
+        </section>
+
+        <section class="story-section" id="about" data-chapter="about">
+            <div class="story-inner story-inner-right">
+                <p class="eyebrow"><span class="eyebrow-number">02</span> THE PERSON BEHIND THE BUILD</p>
+                <h2>Curiosity<br>into <em>creation.</em></h2>
+                <p class="section-lede">I’m a developer exploring full-stack engineering, automation, and AI-powered tools.</p>
+                <p class="section-copy">I enjoy turning ideas into usable products, connecting different systems, and learning by building. This portfolio is designed as a journey through that work—not just a list of links.</p>
+                <div class="signal-row">
+                    <span class="signal-dot"></span>
+                    <span>PERSONAL INTRODUCTION · MORE DETAILS COMING FROM MY RESUME</span>
+                </div>
             </div>
-        </div>
+            <div class="floating-caption">A LITTLE CURIOSITY CAN BUILD A LOT.</div>
+            <div class="chapter-index"><strong>02</strong><span>ABOUT</span></div>
+        </section>
 
-        <div class="intro-art" aria-hidden="true">
-            <div class="orbit orbit-outer"></div>
-            <div class="orbit orbit-inner"></div>
-            <div class="orbit-center"><span>T<span>.</span></span></div>
-            <span class="orbit-label orbit-label-top">BUILD / LEARN / SHIP</span>
-            <span class="orbit-label orbit-label-bottom">TURN IDEAS INTO THINGS</span>
-            <span class="orbit-point"></span>
-        </div>
-
-        <div class="intro-bottom">
-            <span>WEBGL EXPERIENCE</span>
-            <span>DESIGNED TO BE EXPLORED</span>
-            <span>© 2026 · TANUSHH18</span>
-        </div>
-    </section>
-
-    <footer class="world-footer">
-        <div class="world-index">
-            <span class="footer-number">01</span>
-            <span class="footer-copy">
-                <strong>RIDE TO DISCOVER</strong>
-                <small>Approach a landmark to reveal a project</small>
-            </span>
-        </div>
-        <div class="footer-center">THE ROAD IS THE PORTFOLIO</div>
-        <div class="footer-keys"><span class="key">W A S D</span><span>MOVE</span></div>
-    </footer>
-
-    <div class="touch-controls" aria-label="Touch driving controls">
-        <div class="touch-pad">
-            <button class="touch-key touch-up" type="button" data-key="KeyW" aria-label="Accelerate">▲</button>
-            <div class="touch-pad-row">
-                <button class="touch-key" type="button" data-key="KeyA" aria-label="Steer left">◀</button>
-                <button class="touch-key" type="button" data-key="KeyS" aria-label="Reverse">▼</button>
-                <button class="touch-key" type="button" data-key="KeyD" aria-label="Steer right">▶</button>
+        <section class="story-section" id="skills" data-chapter="skills">
+            <div class="story-inner">
+                <p class="eyebrow"><span class="eyebrow-number">03</span> TOOLS OF THE TRADE</p>
+                <h2>Learn the stack.<br><em>Build the system.</em></h2>
+                <p class="section-lede">A growing toolkit across product engineering, backend systems, and AI workflows.</p>
+                <div class="skill-grid">
+                    <article class="skill-tile">
+                        <span class="tile-index">A / 01</span><span class="tile-icon">◫</span>
+                        <h3>Product engineering</h3>
+                        <p>Web application architecture, user interfaces, full-stack product development.</p>
+                        <div class="tile-tags"><span>React</span><span>Node.js</span><span>TypeScript</span></div>
+                    </article>
+                    <article class="skill-tile">
+                        <span class="tile-index">B / 02</span><span class="tile-icon">⌘</span>
+                        <h3>Systems &amp; APIs</h3>
+                        <p>Application backends, integrations, real-time collaboration, and data flows.</p>
+                        <div class="tile-tags"><span>APIs</span><span>MongoDB</span><span>Socket.IO</span></div>
+                    </article>
+                    <article class="skill-tile">
+                        <span class="tile-index">C / 03</span><span class="tile-icon">✳</span>
+                        <h3>AI &amp; automation</h3>
+                        <p>Retrieval workflows, multi-step research systems, and practical automation.</p>
+                        <div class="tile-tags"><span>RAG</span><span>LangGraph</span><span>Workflows</span></div>
+                    </article>
+                </div>
+                <p class="fine-print">Initial categories reflect current project repositories. The complete skill list will be refined using my resume.</p>
             </div>
-        </div>
-        <div class="touch-actions">
-            <button class="touch-action touch-boost" type="button" data-key="ShiftLeft">BOOST</button>
-            <button class="touch-action" type="button" data-key="ControlLeft">BRAKE</button>
-            <button class="touch-action" type="button" data-press="KeyR">RESET</button>
-        </div>
-    </div>
+            <div class="chapter-index"><strong>03</strong><span>CAPABILITIES</span></div>
+        </section>
+
+        <section class="story-section" id="experience" data-chapter="experience">
+            <div class="story-inner story-inner-right">
+                <p class="eyebrow"><span class="eyebrow-number">04</span> FROM LEARNING TO SHIPPING</p>
+                <h2>Real work.<br><em>Real growth.</em></h2>
+                <p class="section-lede">The next chapter is about turning engineering practice into professional impact.</p>
+                <div class="timeline-card">
+                    <div class="timeline-marker"><span></span></div>
+                    <div>
+                        <span class="timeline-kicker">PROFESSIONAL EXPERIENCE</span>
+                        <h3>Career timeline</h3>
+                        <p>Company, role, dates, responsibilities, and verified achievements will be populated from my resume. This foundation deliberately avoids inventing employment details.</p>
+                        <span class="pending-label">RESUME DETAILS TO BE ADDED</span>
+                    </div>
+                </div>
+            </div>
+            <div class="chapter-index"><strong>04</strong><span>EXPERIENCE</span></div>
+        </section>
+
+        <section class="story-section projects-section" id="projects" data-chapter="projects">
+            <div class="story-inner story-inner-wide">
+                <p class="eyebrow"><span class="eyebrow-number">05</span> SELECTED BUILDS</p>
+                <h2>Ideas made<br><em>real.</em></h2>
+                <p class="section-lede">A few products and experiments that show what I like to build.</p>
+                <div class="project-grid">
+                    <article class="project-card project-card-large">
+                        <div class="project-topline"><span>01 / SECURITY</span><span>WEB + ANDROID</span></div>
+                        <div class="project-glyph glyph-vault"><span>⌑</span></div>
+                        <h3>Stashr</h3>
+                        <p>An encrypted password vault and project workspace for credentials, hosting details, configuration, and cross-platform access.</p>
+                        <div class="project-tags"><span>Security</span><span>Full-stack</span><span>Encryption</span></div>
+                        <a href="https://github.com/Tanushh18/password-manager" target="_blank" rel="noopener noreferrer">Explore repository <span>↗</span></a>
+                    </article>
+                    <article class="project-card">
+                        <div class="project-topline"><span>02 / COLLABORATION</span><span>PLATFORM</span></div>
+                        <div class="project-glyph glyph-code"><span>{ }</span></div>
+                        <h3>WeCode</h3>
+                        <p>A collaborative coding platform with synchronized editing, real-time communication, and structured DSA learning.</p>
+                        <div class="project-tags"><span>MERN</span><span>WebRTC</span><span>Socket.IO</span></div>
+                        <div class="project-actions">
+                            <a href="https://wecode-2.onrender.com" target="_blank" rel="noopener noreferrer">Live demo ↗</a>
+                            <a href="https://github.com/Tanushh18/WeCode" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+                        </div>
+                    </article>
+                    <article class="project-card">
+                        <div class="project-topline"><span>03 / DISCOVERY</span><span>WEB + ANDROID</span></div>
+                        <div class="project-glyph glyph-radar"><span>◎</span></div>
+                        <h3>DealRadar</h3>
+                        <p>A searchable deal discovery experience with deduplication, price tracking, and marketplace notifications.</p>
+                        <div class="project-tags"><span>Search</span><span>Data pipelines</span><span>Notifications</span></div>
+                        <div class="project-actions">
+                            <a href="https://dealradar.ggnhome.com" target="_blank" rel="noopener noreferrer">Live demo ↗</a>
+                            <a href="https://github.com/Tanushh18/Deal_Radar" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+                        </div>
+                    </article>
+                    <article class="project-card">
+                        <div class="project-topline"><span>04 / AI SYSTEMS</span><span>RESEARCH</span></div>
+                        <div class="project-glyph glyph-ai"><span>✳</span></div>
+                        <h3>RAG Intelligence Agent</h3>
+                        <p>A LangGraph-based foundation for document indexing, context-aware retrieval, and multi-step research workflows.</p>
+                        <div class="project-tags"><span>RAG</span><span>LangGraph</span><span>LLMs</span></div>
+                        <a href="https://github.com/Tanushh18/rag-intelligence-agent" target="_blank" rel="noopener noreferrer">Explore repository <span>↗</span></a>
+                    </article>
+                </div>
+            </div>
+            <div class="chapter-index"><strong>05</strong><span>PROJECTS</span></div>
+        </section>
+
+        <section class="story-section" id="education" data-chapter="education">
+            <div class="story-inner">
+                <p class="eyebrow"><span class="eyebrow-number">06</span> THE LEARNING ROUTE</p>
+                <h2>Always in<br><em>progress.</em></h2>
+                <p class="section-lede">Good engineering comes from curiosity, practice, feedback, and iteration.</p>
+                <div class="learning-path">
+                    <div class="path-node"><span>01</span><div><strong>Foundations</strong><p>Education and coursework — to be filled from resume.</p></div></div>
+                    <div class="path-line"></div>
+                    <div class="path-node"><span>02</span><div><strong>Building</strong><p>Learning through real projects, integrations, and practical problem-solving.</p></div></div>
+                    <div class="path-line"></div>
+                    <div class="path-node"><span>03</span><div><strong>What’s next</strong><p>Keep improving the craft, one shipped feature at a time.</p></div></div>
+                </div>
+            </div>
+            <div class="chapter-index"><strong>06</strong><span>EDUCATION</span></div>
+        </section>
+
+        <section class="story-section" id="experiments" data-chapter="experiments">
+            <div class="story-inner story-inner-right">
+                <p class="eyebrow"><span class="eyebrow-number">07</span> BEYOND THE CHECKLIST</p>
+                <h2>Make the web<br><em>feel alive.</em></h2>
+                <p class="section-lede">This portfolio is itself an experiment in creative engineering: a procedural 3D world, a camera path driven by scroll, and a real portfolio layered on top.</p>
+                <div class="experiment-stats">
+                    <div><strong>3D</strong><span>PROCEDURAL WORLD</span></div>
+                    <div><strong>01</strong><span>SCROLL JOURNEY</span></div>
+                    <div><strong>∞</strong><span>ROOM TO ITERATE</span></div>
+                </div>
+            </div>
+            <div class="chapter-index"><strong>07</strong><span>EXPERIMENTS</span></div>
+        </section>
+
+        <section class="story-section contact-section" id="contact" data-chapter="contact">
+            <div class="contact-backdrop" aria-hidden="true"></div>
+            <div class="story-inner contact-inner">
+                <p class="eyebrow"><span class="eyebrow-number">08</span> THE NEXT DESTINATION</p>
+                <h2>Let’s build<br><em>what’s next.</em></h2>
+                <p class="section-lede">Interested in a project, a role, or a conversation about technology? Find me on GitHub and explore what I’m building.</p>
+                <div class="contact-actions">
+                    <a class="primary-action" href="https://github.com/Tanushh18" target="_blank" rel="noopener noreferrer">Visit my GitHub <span>↗</span></a>
+                    <a class="secondary-action" href="https://github.com/Tanushh18/ride-my-world" target="_blank" rel="noopener noreferrer">Explore this portfolio’s code <span>↗</span></a>
+                </div>
+                <div class="contact-note">Email, LinkedIn, and resume download can be added after the resume and contact details are provided.</div>
+            </div>
+            <div class="contact-footer"><span>TANUSH PORTFOLIO</span><span>BUILT TO KEEP MOVING ↗</span><span>© 2026</span></div>
+            <div class="chapter-index"><strong>08</strong><span>CONTACT</span></div>
+        </section>
+    </main>
+
+    <aside class="scroll-progress-label" aria-live="polite"><span class="js-progress-label">01 / 08</span><span>YOUR JOURNEY</span></aside>
 
     <script type="module" src="./index.js"></script>
 </body>
