@@ -139,7 +139,7 @@ export class ScrollTour
         this.onScroll()
 
         const camera = this.game.view.camera
-        camera.fov = 57
+        camera.fov = 53
         camera.updateProjectionMatrix()
         this.update(camera, true)
     }
@@ -214,10 +214,10 @@ export class ScrollTour
         const cityReveal = smoothstep(0.68, 0.82, this.progress)
         const finale = smoothstep(0.92, 0.99, this.progress)
 
-        const followDistance = mix(10.8, 6.7, establishing) + waterfall * 1.9 + finale * 5.4
-        const cameraHeight = mix(6.6, 3.45, establishing) + waterfall * 1.4 + cityReveal * 0.25 + finale * 3.3
-        const sideOffset = waterfall * 2.2 - finale * 2.0
-        const lookAhead = mix(6.8, 4.6, establishing) + waterfall * 1.6 + finale * 5.0
+        const followDistance = mix(7.8, 4.35, establishing) + waterfall * 1.7 + finale * 4.8
+        const cameraHeight = mix(4.85, 2.45, establishing) + waterfall * 0.95 + cityReveal * 0.25 + finale * 3.15
+        const sideOffset = waterfall * 1.7 - finale * 2.0
+        const lookAhead = mix(5.8, 4.4, establishing) + waterfall * 1.6 + finale * 4.4
 
         this.roadCurve.getPointAt(Math.min(1, this.progress + lookAhead / Math.max(this.roadLength, 1)), this.cameraTarget)
         this.cameraTarget.y = this.routePoint.y + mix(1.25, 1.65, finale)
@@ -232,7 +232,7 @@ export class ScrollTour
         this.lookTarget.lerp(this.cameraTarget, immediateUpdate ? 1 : 1 - Math.exp(-delta * 5.2))
         camera.lookAt(this.lookTarget)
 
-        const nextFov = mix(57, 52, finale)
+        const nextFov = mix(53, 49, finale)
         if(Math.abs(nextFov - this.lastFov) > 0.25)
         {
             camera.fov = nextFov
