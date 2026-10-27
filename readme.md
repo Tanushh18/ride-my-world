@@ -12,6 +12,10 @@ The experience moves from a lush forest road into a river and waterfall crossing
 - One shared Catmull–Rom road curve drives the road geometry, rider position, wheel rotation, camera, and shadow focus.
 - Cinematic camera staging: establishing shot, close scooter chase, waterfall reveal, city skyline reveal, and wider airport finale.
 - Original procedural 3D environment: instanced roadside trees, faceted mountains, river/waterfall, bridge, city buildings, storefronts, sidewalk strips, tram rails, crosswalks, campus landmark and airport.
+- Scroll-reactive additive light ribbons and instanced light nodes on the road, plus 300 floating firefly-like motes for atmospheric depth.
+- Cursor-reactive camera parallax, animated chapter reveals, a warm spotlight that follows the pointer, and an animated scene-progress treatment.
+- A personalized cinematic loader with real renderer/physics/world/ready stages, orbiting sun graphic, animated route lines and an animated status rail.
+- Warm frosted-glass portfolio panels replace the previous heavy dark cards. The 3D world remains visible through the cards while resume content keeps readable contrast.
 - Custom sunset fog for distant geometry, stylized low-poly architecture, soft sky fill, warm rim lighting and directional shadows.
 - Real HTML story chapters: About, Skills, Experience, Projects, Education, Certifications, Achievements and Contact.
 - Resume-backed content is centralized in `sources/data/portfolio.js`.
