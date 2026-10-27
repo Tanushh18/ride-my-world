@@ -111,15 +111,27 @@ try
     await page.evaluate(() =>
     {
         document.documentElement.style.scrollBehavior = 'auto'
+        const tour = window.game.view.scrollTour
         const projects = document.getElementById('projects')
         const education = document.getElementById('education')
         const start = projects.getBoundingClientRect().top + window.scrollY
         const end = education.getBoundingClientRect().top + window.scrollY
-        // Aim just beyond the midpoint between Projects and Education.
-        // That crosses the 0.70 in-world sign target, allowing the reading
-        // dwell to trigger instead of asymptotically approaching it.
-        window.scrollTo(0, start + (end - start) * 0.55)
+        const startStop = tour.chapterStops.projects
+        const endStop = tour.chapterStops.education
+        const desiredProgress = 0.74
+        const segmentRatio = (desiredProgress - startStop) / (endStop - startStop)
+
+        // Calculate the page scroll that maps to a known ride progress using
+        // the same chapter mapping as production, then synchronously remeasure.
+        window.scrollTo(0, start + (end - start) * segmentRatio)
+        tour.measureScroll()
     })
+
+    await page.waitForFunction(() =>
+        window.game.view.scrollTour.targetProgress > 0.72,
+        null,
+        { timeout: 10000 }
+    )
 
     await page.waitForFunction(() =>
         Math.abs(window.game.view.scrollTour.progress - 0.70) < 0.001
